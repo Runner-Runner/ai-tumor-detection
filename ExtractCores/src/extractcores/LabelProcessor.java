@@ -1,14 +1,17 @@
 package extractcores;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
-import org.apache.commons.codec.binary.StringUtils;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.usermodel.HSSFRow;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
@@ -122,6 +125,8 @@ public class LabelProcessor
     {
       BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile));
       
+      writer.write(coreLabelArray.length + "," + coreLabelArray[0].length + "\n");
+      
       for(int i=0; i<coreLabelArray.length; i++)
       {
         CoreLabel[] row = coreLabelArray[i];
@@ -179,5 +184,43 @@ public class LabelProcessor
       }
     }
     return coreLabelArray;
+  }
+  
+  public CoreLabel[][] readLabelImage(String labelName)
+  {
+    try
+    {
+      BufferedReader reader = new BufferedReader(new FileReader(DEFAULT_LABEL_PATH      
+              + labelName));
+      
+      String sizeLine = reader.readLine();
+      if(sizeLine == null)
+      {
+        return null;
+      }
+      String[] size = sizeLine.split(",");
+      int rows = Integer.parseInt(size[0]);
+      int columns = Integer.parseInt(size[1]);
+      CoreLabel[][] coreLabelArray = new CoreLabel[rows][columns];
+      
+      String line;
+      int i=0;
+      while((line = reader.readLine()) != null)
+      {
+        String[] cellValueArray = line.split(",");
+        for(int j=0; j<cellValueArray.length; j++)
+        {
+          coreLabelArray[i][j] = CoreLabel.valueOf(cellValueArray[j]);
+        }
+        i++;
+      }
+      return coreLabelArray;
+    }
+    catch (IOException ex)
+    {
+      System.out.println("Could not read label file.");
+      System.out.println(ex.getMessage());
+      return null;
+    }
   }
 }

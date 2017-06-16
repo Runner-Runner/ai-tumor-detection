@@ -1,16 +1,15 @@
 package extractcores;
 
+import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.Iterator;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReadParam;
 import javax.imageio.ImageReader;
-import javax.imageio.ImageTypeSpecifier;
+import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.stream.ImageInputStream;
 
 /**
@@ -130,8 +129,18 @@ public class ImageProcessor
   {
     CannyEdgeDetector edgeDetector = new CannyEdgeDetector();
     edgeDetector.setSourceImage(sourceImage);
+
+    //default: 2.5f
+    edgeDetector.setLowThreshold(2.5f);
+    //default: 7.5f
+    edgeDetector.setHighThreshold(7.5f);
+
     edgeDetector.process();
     BufferedImage edgesImage = edgeDetector.getEdgesImage();
+
+    //Convert to TYPE_3BYTE_BGR
+    edgesImage = convert(edgesImage, BufferedImage.TYPE_3BYTE_BGR);
+
     return edgesImage;
   }
 
@@ -149,5 +158,29 @@ public class ImageProcessor
       return false;
     }
     return true;
+  }
+
+  public void getImageCompressionType(String imageName)
+  {
+    ImageReader imageReader = getImageReader(imageName);
+    try
+    {
+      IIOMetadata imageMetadata = imageReader.getImageMetadata(0);
+      String[] extraMetadataFormatNames = imageMetadata.getExtraMetadataFormatNames();
+    }
+    catch (IOException ex)
+    {
+      System.out.println("Cannot receive compression type from reader.");
+      System.out.println(ex.getMessage());
+    }
+  }
+
+  private static BufferedImage convert(BufferedImage src, int bufImgType)
+  {
+    BufferedImage img = new BufferedImage(src.getWidth(), src.getHeight(), bufImgType);
+    Graphics2D g2d = img.createGraphics();
+    g2d.drawImage(src, 0, 0, null);
+    g2d.dispose();
+    return img;
   }
 }
