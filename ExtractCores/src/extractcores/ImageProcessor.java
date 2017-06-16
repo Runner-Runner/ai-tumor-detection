@@ -11,6 +11,7 @@ import javax.imageio.ImageReadParam;
 import javax.imageio.ImageReader;
 import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.stream.ImageInputStream;
+import static extractcores.DefaultPaths.FILE_BASE_PATH;
 
 /**
  *
@@ -18,23 +19,9 @@ import javax.imageio.stream.ImageInputStream;
  */
 public class ImageProcessor
 {
-  private static final String FILE_PATH = "..\\data\\";
-
-  private String filePath;
-
-  public ImageProcessor()
+  public BufferedImage extractRegion(String filePath, String imageName, int x, int y, int width, int height)
   {
-    this.filePath = FILE_PATH;
-  }
-
-  public void setFilePath(String filePath)
-  {
-    this.filePath = filePath;
-  }
-
-  public BufferedImage extractRegion(String imageName, int x, int y, int width, int height)
-  {
-    ImageReader reader = getImageReader(imageName);
+    ImageReader reader = getImageReader(filePath, imageName);
     ImageReadParam param = reader.getDefaultReadParam();
 
     Rectangle sourceRegion = new Rectangle(x, y, width, height);
@@ -53,9 +40,10 @@ public class ImageProcessor
     }
   }
 
-  public BufferedImage downsampleImage(String imageName, int sampleFactorX, int sampleFactorY)
+  public BufferedImage downsampleImage(String filePath, String imageName, 
+          int sampleFactorX, int sampleFactorY)
   {
-    ImageReader reader = getImageReader(imageName);
+    ImageReader reader = getImageReader(filePath, imageName);
     ImageReadParam param = reader.getDefaultReadParam();
     param.setSourceSubsampling(sampleFactorX, sampleFactorY, 0, 0);
 
@@ -72,7 +60,7 @@ public class ImageProcessor
     }
   }
 
-  public BufferedImage readImage(String imageName)
+  public BufferedImage readImage(String filePath, String imageName)
   {
     try
     {
@@ -87,7 +75,7 @@ public class ImageProcessor
     }
   }
 
-  private ImageReader getImageReader(String imageName)
+  private ImageReader getImageReader(String filePath, String imageName)
   {
     File inputFile = new File(filePath + imageName);
     boolean exists = inputFile.exists();
@@ -144,7 +132,7 @@ public class ImageProcessor
     return edgesImage;
   }
 
-  public boolean writeImage(BufferedImage writeImage, String outputFileName)
+  public boolean writeImage(BufferedImage writeImage, String filePath, String outputFileName)
   {
     File outputFile = new File(filePath + outputFileName);
     try
@@ -160,9 +148,9 @@ public class ImageProcessor
     return true;
   }
 
-  public void getImageCompressionType(String imageName)
+  public void getImageCompressionType(String filePath, String imageName)
   {
-    ImageReader imageReader = getImageReader(imageName);
+    ImageReader imageReader = getImageReader(filePath, imageName);
     try
     {
       IIOMetadata imageMetadata = imageReader.getImageMetadata(0);

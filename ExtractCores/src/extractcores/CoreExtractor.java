@@ -22,16 +22,13 @@ import org.opencv.objdetect.Objdetect;
 
 public class CoreExtractor
 {
-  private static final String FILE_PATH_EDGE = "..\\data\\edge output\\";
-  private static final String FILE_PATH_LABEL = "..\\data\\labels\\";
-  private static final String FILE_PATH_INFORMATIVE = "..\\data\\informative\\";
-
   public CoreExtractor()
   {
     System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
   }
 
-  public Rectangle[][] findCores(BufferedImage edgeImage, String labelFileName)
+  public Rectangle[][] findCores(String pathName, String edgeFileName,
+          String labelFileName)
   {
     LabelProcessor labelProcessor = new LabelProcessor();
     CoreLabel[][] coreLabels = labelProcessor.readLabelImage(labelFileName);
@@ -39,6 +36,9 @@ public class CoreExtractor
     int columnCount = coreLabels[0].length;
 
     Rectangle[][] coreCoordinates = new Rectangle[rowCount][columnCount];
+
+    ImageProcessor imageProcessor = new ImageProcessor();
+    BufferedImage edgeImage = imageProcessor.readImage(pathName, edgeFileName);
 
     int imageHeight = edgeImage.getHeight();
     int imageWidth = edgeImage.getWidth();
@@ -53,12 +53,13 @@ public class CoreExtractor
     }
 
     ///Display
-    BufferedImage foundObjectsImage = new BufferedImage(edgeImage.getWidth(), edgeImage.getHeight(), edgeImage.getType());
+    BufferedImage foundObjectsImage = new BufferedImage(edgeImage.getWidth(),
+            edgeImage.getHeight(), edgeImage.getType());
     Graphics g = foundObjectsImage.getGraphics();
     g.drawImage(edgeImage, 0, 0, null);
     ///
 
-    Mat edgeMat = Imgcodecs.imread(FILE_PATH_EDGE + "5512-ds-edge.png", Imgcodecs.CV_LOAD_IMAGE_GRAYSCALE);
+    Mat edgeMat = Imgcodecs.imread(pathName + edgeFileName, Imgcodecs.CV_LOAD_IMAGE_GRAYSCALE);
 
     Mat hierarchy = new Mat();
     LinkedList<MatOfPoint> contours = new LinkedList<>();
@@ -75,7 +76,7 @@ public class CoreExtractor
       Rect boundingBox = Imgproc.boundingRect(contours.get(i));
       rectangles.add(boundingBox);
       weights.add(1);
-      
+
       int boundingBoxArea = boundingBox.width * boundingBox.height;
 //      if (Imgproc.contourArea(contours.get(i)) > 1800)
 
@@ -97,14 +98,14 @@ public class CoreExtractor
     Objdetect.groupRectangles(matOfRect, matWeights, 1, 0.2);
 
     g.setColor(Color.RED);
-    for(Rect rect : matOfRect.toList())
+    for (Rect rect : matOfRect.toList())
     {
       g.drawRect(rect.x, rect.y, rect.width, rect.height);
     }
-    
+
     g.dispose();
-    ImageProcessor imageProcessor = new ImageProcessor();
-    imageProcessor.writeImage(foundObjectsImage, FILE_PATH_INFORMATIVE + "5512-rect.png");
+    imageProcessor.writeImage(foundObjectsImage,
+            DefaultPaths.FILE_PATH_INFORMATIVE, "5512-rect.png");
 
     return coreCoordinates;
   }
