@@ -8,7 +8,10 @@ public interface DefaultPaths
   public static final String FILE_PATH_DOWNSAMPLE = FILE_BASE_PATH + "ds output\\";
   public static final String FILE_PATH_LABEL = FILE_BASE_PATH + "labels\\";
   public static final String FILE_PATH_INFORMATIVE = FILE_BASE_PATH + "informative\\";
+  public static final String FILE_PATH_INPUT_SEGMENTS = FILE_BASE_PATH + "input images\\";
 
+  public static final String CROSSREF_FILE_NAME = "crossref.properties";
+  
   public static final String SAMPLE_IMAGE_DS = "5512-ds.png";
   public static final String SAMPLE_IMAGE_EDGE = "5512-edge.png";
   public static final String SAMPLE_SVS = "5512.svs";

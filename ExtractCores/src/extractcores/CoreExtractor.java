@@ -6,6 +6,9 @@ import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import org.opencv.core.Core;
@@ -31,9 +34,10 @@ public class CoreExtractor
           String labelFileName)
   {
     LabelProcessor labelProcessor = new LabelProcessor();
-    CoreLabel[][] coreLabels = labelProcessor.readLabelImage(labelFileName);
-    int rowCount = coreLabels.length;
-    int columnCount = coreLabels[0].length;
+    LabelInformation labelInformation = labelProcessor.readTxtLabelFile(
+            DefaultPaths.FILE_PATH_LABEL, labelFileName);
+    int rowCount = labelInformation.getRowCount();
+    int columnCount = labelInformation.getColumnCount();
 
     Rectangle[][] coreCoordinates = new Rectangle[rowCount][columnCount];
 
@@ -44,14 +48,6 @@ public class CoreExtractor
     int imageWidth = edgeImage.getWidth();
 
     //rgb color = -1 => bright pixel/edge
-    for (int h = 0; h < imageWidth; h++)
-    {
-      for (int v = 0; v < imageHeight; v++)
-      {
-        int pixelColor = edgeImage.getRGB(h, v);
-      }
-    }
-
     ///Display
     BufferedImage foundObjectsImage = new BufferedImage(edgeImage.getWidth(),
             edgeImage.getHeight(), edgeImage.getType());
@@ -69,6 +65,9 @@ public class CoreExtractor
     List<Rect> rectangles = new ArrayList<>();
     List<Integer> weights = new ArrayList<>();
 
+    List<Integer> boundingAreas = new ArrayList<>();
+    List<Double> boundingSideRatios = new ArrayList<>();
+
     for (int i = 0; i < contours.size(); i++)
     {
       g.setColor(Color.red);
@@ -78,17 +77,31 @@ public class CoreExtractor
       weights.add(1);
 
       int boundingBoxArea = boundingBox.width * boundingBox.height;
+      boundingAreas.add(boundingBoxArea);
 //      if (Imgproc.contourArea(contours.get(i)) > 1800)
 
       //TODO set max limit as well
       if (boundingBoxArea > 1800)
       {
+        double sideRatio = Double.valueOf(boundingBox.height) / boundingBox.width;
+
+        //Special case: skip bounding rectangles of full core size with extreme
+        //ratio, indicating overlapping full cores on the array.
+        if (boundingBoxArea > 3000 && sideRatio > 1.5)
+        {
+          continue;
+        }
+
         g.setColor(Color.green);
         finalListOfContours.add(contours.get(i));
+        boundingSideRatios.add(sideRatio);
       }
 
-//      g.drawRect(boundingBox.x, boundingBox.y,
-//              boundingBox.width, boundingBox.height);
+      g.drawRect(boundingBox.x, boundingBox.y,
+              boundingBox.width, boundingBox.height);
+      g.drawString(String.valueOf(boundingBoxArea),
+              boundingBox.x + boundingBox.width + 5,
+              boundingBox.y + boundingBox.height);
     }
 
     MatOfRect matOfRect = new MatOfRect();
@@ -97,7 +110,7 @@ public class CoreExtractor
     matWeights.fromList(weights);
     Objdetect.groupRectangles(matOfRect, matWeights, 1, 0.2);
 
-    g.setColor(Color.RED);
+    g.setColor(Color.ORANGE);
     for (Rect rect : matOfRect.toList())
     {
       g.drawRect(rect.x, rect.y, rect.width, rect.height);
@@ -106,6 +119,14 @@ public class CoreExtractor
     g.dispose();
     imageProcessor.writeImage(foundObjectsImage,
             DefaultPaths.FILE_PATH_INFORMATIVE, "5512-rect.png");
+
+    Collections.sort(boundingAreas);
+    Collections.reverse(boundingAreas);
+    System.out.println(Arrays.toString(boundingAreas.toArray()));
+
+    Collections.sort(boundingSideRatios);
+    Collections.reverse(boundingSideRatios);
+    System.out.println(Arrays.toString(boundingSideRatios.toArray()));
 
     return coreCoordinates;
   }

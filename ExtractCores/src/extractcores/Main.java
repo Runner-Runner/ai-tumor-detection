@@ -4,14 +4,21 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 
-public class ExtractCores
+public class Main
 {
   public static void main(String[] args) throws IOException
   {
-//    createSingleEdgeImage();
+//    createLabelFile();
     findCores();
   }
 
+  public static void createLabelFile()
+  {
+    LabelProcessor labelProcessor = new LabelProcessor();
+    labelProcessor.writeTxtLabelFile(DefaultPaths.FILE_PATH_LABEL, 
+            DefaultPaths.SAMPLE_XLS_LABEL);
+  }
+  
   public static void createSingleEdgeImage()
   {
     ImageProcessor imageProcessor = new ImageProcessor();

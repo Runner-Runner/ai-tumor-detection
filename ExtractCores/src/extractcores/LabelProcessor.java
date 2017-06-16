@@ -10,8 +10,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.usermodel.HSSFRow;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
@@ -21,19 +19,13 @@ import org.apache.poi.util.StringUtil;
 
 public class LabelProcessor
 {
-
-  private static final String DEFAULT_LABEL_PATH = "..\\data\\labels\\";
-  private static final String CROSSREF_FILE_NAME = "crossref.properties";
-
-  private String labelPath = DEFAULT_LABEL_PATH;
-
-  public void writeLabelFile(String fileName)
+  public void writeTxtLabelFile(String pathName, String fileName)
   {
     Properties crossref = new Properties();
     InputStream propStream;
     try
     {
-      propStream = new FileInputStream(DEFAULT_LABEL_PATH + CROSSREF_FILE_NAME);
+      propStream = new FileInputStream(pathName + DefaultPaths.CROSSREF_FILE_NAME);
       crossref.load(propStream);
     }
     catch (IOException ex)
@@ -50,7 +42,7 @@ public class LabelProcessor
     FileInputStream fileStream;
     try
     {
-      fileStream = new FileInputStream(labelPath + fileName);
+      fileStream = new FileInputStream(pathName + fileName);
     }
     catch (FileNotFoundException ex)
     {
@@ -58,6 +50,10 @@ public class LabelProcessor
       System.out.println(ex.getMessage());
       return;
     }
+
+    int tumorCount = 0;
+    int normalCount = 0;
+    int gapCount = 0;
 
     String[][] labelArray = null;
 
@@ -78,14 +74,14 @@ public class LabelProcessor
       {
         HSSFRow hssfRow = sheet.getRow(i);
         HSSFCell cell = hssfRow.getCell(0);
-        if(!cell.getStringCellValue().isEmpty())
+        if (!cell.getStringCellValue().isEmpty())
         {
           realRowCount++;
         }
       }
-      
+
       labelArray = new String[realRowCount][columnCount];
-      
+
       //Run through the whole rows now and store label values
       int realRowIndex = -1;
       outer:
@@ -100,7 +96,7 @@ public class LabelProcessor
           HSSFCell cell = hssfRow.getCell(j);
           String stringCellValue = cell.getStringCellValue();
           //Skip empty rows
-          if(cell.getStringCellValue().isEmpty())
+          if (cell.getStringCellValue().isEmpty())
           {
             realRowIndex--;
             continue outer;
@@ -119,26 +115,46 @@ public class LabelProcessor
 
     CoreLabel[][] coreLabelArray = convertLabelArray(labelArray);
 
-    File outputFile = new File(
-            DEFAULT_LABEL_PATH + correspondingSvsName + "-label.txt");
+    for (int i = 0; i < coreLabelArray.length; i++)
+    {
+      for (int j = 0; j < coreLabelArray[0].length; j++)
+      {
+        switch (coreLabelArray[i][j])
+        {
+          case TUMOR:
+            tumorCount++;
+            break;
+          case NORMAL:
+            normalCount++;
+            break;
+          case GAP:
+            gapCount++;
+            break;
+        }
+      }
+    }
+
+    File outputFile = new File(pathName + correspondingSvsName + "-label.txt");
     try
     {
       BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile));
-      
-      writer.write(coreLabelArray.length + "," + coreLabelArray[0].length + "\n");
-      
-      for(int i=0; i<coreLabelArray.length; i++)
+
+      //Convenience: store array dimensions
+      writer.write(coreLabelArray.length + "," + coreLabelArray[0].length
+              + "," + tumorCount + "," + normalCount + "," + gapCount + "\n");
+
+      for (int i = 0; i < coreLabelArray.length; i++)
       {
         CoreLabel[] row = coreLabelArray[i];
         String rowText = StringUtil.join(row, ",");
         writer.write(rowText);
-        
-        if(i < coreLabelArray.length - 1)
+
+        if (i < coreLabelArray.length - 1)
         {
           writer.write("\n");
         }
       }
-      
+
       writer.close();
     }
     catch (IOException ex)
@@ -158,7 +174,7 @@ public class LabelProcessor
       {
         String labelText = labelArray[i][j];
         CoreLabel coreLabel = null;
-        if (labelText.startsWith("W") 
+        if (labelText.startsWith("W")
                 || labelText.startsWith("N")
                 || labelText.startsWith("C")
                 || labelText.startsWith("A")
@@ -166,11 +182,11 @@ public class LabelProcessor
         {
           coreLabel = CoreLabel.NORMAL;
         }
-        else if(labelText.startsWith("T"))
+        else if (labelText.startsWith("T"))
         {
           coreLabel = CoreLabel.TUMOR;
         }
-        else if(labelText.startsWith("gap")
+        else if (labelText.startsWith("gap")
                 || labelText.startsWith("O"))
         {
           coreLabel = CoreLabel.GAP;
@@ -185,36 +201,42 @@ public class LabelProcessor
     }
     return coreLabelArray;
   }
-  
-  public CoreLabel[][] readLabelImage(String labelName)
+
+  public LabelInformation readTxtLabelFile(String pathName, String labelName)
   {
     try
     {
-      BufferedReader reader = new BufferedReader(new FileReader(DEFAULT_LABEL_PATH      
+      BufferedReader reader = new BufferedReader(new FileReader(pathName
               + labelName));
-      
+
       String sizeLine = reader.readLine();
-      if(sizeLine == null)
+      if (sizeLine == null)
       {
         return null;
       }
-      String[] size = sizeLine.split(",");
-      int rows = Integer.parseInt(size[0]);
-      int columns = Integer.parseInt(size[1]);
+      String[] utilityValues = sizeLine.split(",");
+      int rows = Integer.parseInt(utilityValues[0]);
+      int columns = Integer.parseInt(utilityValues[1]);
+      int tumorCount = Integer.parseInt(utilityValues[2]);
+      int normalCount = Integer.parseInt(utilityValues[3]);
+      int gapCount = Integer.parseInt(utilityValues[4]);
       CoreLabel[][] coreLabelArray = new CoreLabel[rows][columns];
-      
+
       String line;
-      int i=0;
-      while((line = reader.readLine()) != null)
+      int i = 0;
+      while ((line = reader.readLine()) != null)
       {
         String[] cellValueArray = line.split(",");
-        for(int j=0; j<cellValueArray.length; j++)
+        for (int j = 0; j < cellValueArray.length; j++)
         {
           coreLabelArray[i][j] = CoreLabel.valueOf(cellValueArray[j]);
         }
         i++;
       }
-      return coreLabelArray;
+
+      LabelInformation labelInformation = new LabelInformation(
+              coreLabelArray, rows, columns, tumorCount, normalCount, gapCount);
+      return labelInformation;
     }
     catch (IOException ex)
     {
