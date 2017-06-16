@@ -120,6 +120,13 @@ public class CoreExtractor
     imageProcessor.writeImage(foundObjectsImage,
             DefaultPaths.FILE_PATH_INFORMATIVE, "5512-rect.png");
 
+    int missingCoreCount = labelInformation.getCoreCount() - finalListOfContours.size();
+    double coreDetectionPercentage = 
+            Double.valueOf(finalListOfContours.size()) 
+            / labelInformation.getCoreCount();
+    System.out.println("Detected cores: " + coreDetectionPercentage + "%. " + 
+            missingCoreCount + " cores were not found.");
+    
     Collections.sort(boundingAreas);
     Collections.reverse(boundingAreas);
     System.out.println(Arrays.toString(boundingAreas.toArray()));
