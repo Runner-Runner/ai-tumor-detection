@@ -25,7 +25,7 @@ public class LabelProcessor
     InputStream propStream;
     try
     {
-      propStream = new FileInputStream(pathName + DefaultPaths.CROSSREF_FILE_NAME);
+      propStream = new FileInputStream(pathName + DefaultConfigValues.CROSSREF_FILE_NAME);
       crossref.load(propStream);
     }
     catch (IOException ex)

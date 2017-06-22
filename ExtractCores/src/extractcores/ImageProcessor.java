@@ -11,7 +11,6 @@ import javax.imageio.ImageReadParam;
 import javax.imageio.ImageReader;
 import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.stream.ImageInputStream;
-import static extractcores.DefaultPaths.FILE_BASE_PATH;
 
 /**
  *
@@ -27,26 +26,21 @@ public class ImageProcessor
     Rectangle sourceRegion = new Rectangle(x, y, width, height);
     param.setSourceRegion(sourceRegion);
 
-    try
-    {
-      BufferedImage inputImage = reader.read(0, param);
-      return inputImage;
-    }
-    catch (IOException ex)
-    {
-      System.out.println("Error while reading image region.");
-      System.out.println(ex.getMessage());
-      return null;
-    }
+    return readImage(reader, param);
   }
 
-  public BufferedImage downsampleImage(String filePath, String imageName, 
+  public BufferedImage downsampleImage(String filePath, String imageName,
           int sampleFactorX, int sampleFactorY)
   {
     ImageReader reader = getImageReader(filePath, imageName);
     ImageReadParam param = reader.getDefaultReadParam();
     param.setSourceSubsampling(sampleFactorX, sampleFactorY, 0, 0);
 
+    return readImage(reader, param);
+  }
+
+  private BufferedImage readImage(ImageReader reader, ImageReadParam param)
+  {
     try
     {
       BufferedImage inputImage = reader.read(0, param);
@@ -54,7 +48,7 @@ public class ImageProcessor
     }
     catch (IOException ex)
     {
-      System.out.println("Error while reading downsampled image.");
+      System.out.println("Error while reading image.");
       System.out.println(ex.getMessage());
       return null;
     }

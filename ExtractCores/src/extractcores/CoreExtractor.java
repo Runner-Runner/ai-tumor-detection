@@ -7,9 +7,7 @@ import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
@@ -35,7 +33,7 @@ public class CoreExtractor
   {
     LabelProcessor labelProcessor = new LabelProcessor();
     LabelInformation labelInformation = labelProcessor.readTxtLabelFile(
-            DefaultPaths.FILE_PATH_LABEL, labelFileName);
+            DefaultConfigValues.FILE_PATH_LABEL, labelFileName);
     int rowCount = labelInformation.getRowCount();
     int columnCount = labelInformation.getColumnCount();
 
@@ -58,11 +56,13 @@ public class CoreExtractor
     Mat edgeMat = Imgcodecs.imread(pathName + edgeFileName, Imgcodecs.CV_LOAD_IMAGE_GRAYSCALE);
 
     Mat hierarchy = new Mat();
-    LinkedList<MatOfPoint> contours = new LinkedList<>();
-    LinkedList<MatOfPoint> finalListOfContours = new LinkedList<>();
-    Imgproc.findContours(edgeMat, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+    List<MatOfPoint> contours = new ArrayList<>();
+    List<MatOfPoint> finalContourList = new ArrayList<>();
+    Imgproc.findContours(edgeMat, contours, hierarchy, Imgproc.RETR_EXTERNAL, 
+            Imgproc.CHAIN_APPROX_SIMPLE);
 
-    List<Rect> rectangles = new ArrayList<>();
+    List<TissueCore> cores = new ArrayList<>();
+    List<Rect> boundingRects = new ArrayList<>();
     List<Integer> weights = new ArrayList<>();
 
     List<Integer> boundingAreas = new ArrayList<>();
@@ -73,7 +73,8 @@ public class CoreExtractor
       g.setColor(Color.red);
 
       Rect boundingBox = Imgproc.boundingRect(contours.get(i));
-      rectangles.add(boundingBox);
+      boundingRects.add(boundingBox);
+      cores.add(new TissueCore(boundingBox));
       weights.add(1);
 
       int boundingBoxArea = boundingBox.width * boundingBox.height;
@@ -93,7 +94,7 @@ public class CoreExtractor
         }
 
         g.setColor(Color.green);
-        finalListOfContours.add(contours.get(i));
+        finalContourList.add(contours.get(i));
         boundingSideRatios.add(sideRatio);
       }
 
@@ -105,7 +106,7 @@ public class CoreExtractor
     }
 
     MatOfRect matOfRect = new MatOfRect();
-    matOfRect.fromList(rectangles);
+    matOfRect.fromList(boundingRects);
     MatOfInt matWeights = new MatOfInt();
     matWeights.fromList(weights);
     Objdetect.groupRectangles(matOfRect, matWeights, 1, 0.2);
@@ -118,15 +119,15 @@ public class CoreExtractor
 
     g.dispose();
     imageProcessor.writeImage(foundObjectsImage,
-            DefaultPaths.FILE_PATH_INFORMATIVE, "5512-rect.png");
+            DefaultConfigValues.FILE_PATH_INFORMATIVE, "5512-rect.png");
 
-    int missingCoreCount = labelInformation.getCoreCount() - finalListOfContours.size();
-    double coreDetectionPercentage = 
-            Double.valueOf(finalListOfContours.size()) 
+    int missingCoreCount = labelInformation.getCoreCount() - finalContourList.size();
+    double coreDetectionPercentage
+            = Double.valueOf(finalContourList.size())
             / labelInformation.getCoreCount();
-    System.out.println("Detected cores: " + coreDetectionPercentage + "%. " + 
-            missingCoreCount + " cores were not found.");
-    
+    System.out.println("Detected cores: " + coreDetectionPercentage + "%. "
+            + missingCoreCount + " cores were not found.");
+
     Collections.sort(boundingAreas);
     Collections.reverse(boundingAreas);
     System.out.println(Arrays.toString(boundingAreas.toArray()));
@@ -134,6 +135,12 @@ public class CoreExtractor
     Collections.sort(boundingSideRatios);
     Collections.reverse(boundingSideRatios);
     System.out.println(Arrays.toString(boundingSideRatios.toArray()));
+
+    //Sort found objects into array
+//    boundingRectangles.get(0).tl();
+//new class? how to sort into columns dynamically, measuring mean on the fly and
+//adapting accordingly?
+    
 
     return coreCoordinates;
   }

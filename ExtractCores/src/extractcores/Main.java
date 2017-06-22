@@ -8,25 +8,34 @@ public class Main
 {
   public static void main(String[] args) throws IOException
   {
-//    createLabelFile();
-    findCores();
+    createDownsampleImage();
   }
 
   public static void createLabelFile()
   {
     LabelProcessor labelProcessor = new LabelProcessor();
-    labelProcessor.writeTxtLabelFile(DefaultPaths.FILE_PATH_LABEL, 
-            DefaultPaths.SAMPLE_XLS_LABEL);
+    labelProcessor.writeTxtLabelFile(DefaultConfigValues.FILE_PATH_LABEL, 
+            DefaultConfigValues.SAMPLE_XLS_LABEL);
   }
   
-  public static void createSingleEdgeImage()
+  public static void createEdgeImage()
   {
     ImageProcessor imageProcessor = new ImageProcessor();
     BufferedImage sourceImage = imageProcessor.readImage(
-            DefaultPaths.FILE_PATH_DOWNSAMPLE, DefaultPaths.SAMPLE_IMAGE_DS);
+            DefaultConfigValues.FILE_PATH_DOWNSAMPLE, DefaultConfigValues.SAMPLE_IMAGE_DS);
     BufferedImage edgeImage = imageProcessor.createEdgeImage(sourceImage);
-    imageProcessor.writeImage(edgeImage, DefaultPaths.FILE_PATH_EDGE, 
-            DefaultPaths.SAMPLE_IMAGE_EDGE);
+    imageProcessor.writeImage(edgeImage, DefaultConfigValues.FILE_PATH_EDGE, 
+            DefaultConfigValues.SAMPLE_IMAGE_EDGE);
+  }
+  
+  public static void createDownsampleImage()
+  {
+    ImageProcessor imageProcessor = new ImageProcessor();
+    BufferedImage dsImage = imageProcessor.downsampleImage
+        ("E:\\HE_TMA\\", "39387.svs", DefaultConfigValues.DOWNSAMPLE_FACTOR_X, 
+                DefaultConfigValues.DOWNSAMPLE_FACTOR_Y);
+    imageProcessor.writeImage(dsImage, DefaultConfigValues.FILE_PATH_DOWNSAMPLE, 
+            "39387-ds.png");
   }
 
   public static void findCores()
@@ -34,11 +43,11 @@ public class Main
     ImageProcessor imageProcessor = new ImageProcessor();
 
     BufferedImage edgeImage = imageProcessor.readImage(
-            DefaultPaths.FILE_PATH_EDGE, DefaultPaths.SAMPLE_IMAGE_EDGE);
+            DefaultConfigValues.FILE_PATH_EDGE, DefaultConfigValues.SAMPLE_IMAGE_EDGE);
 
     CoreExtractor coreExtractor = new CoreExtractor();
-    coreExtractor.findCores(DefaultPaths.FILE_PATH_EDGE, 
-            DefaultPaths.SAMPLE_IMAGE_EDGE, DefaultPaths.SAMPLE_LABEL);
+    coreExtractor.findCores(DefaultConfigValues.FILE_PATH_EDGE, 
+            DefaultConfigValues.SAMPLE_IMAGE_EDGE, DefaultConfigValues.SAMPLE_LABEL);
   }
   
   public static void createEdgeImages()
@@ -52,7 +61,7 @@ public class Main
       try
       {
         BufferedImage sourceImage = imageProcessor.readImage(
-                DefaultPaths.FILE_PATH_IMAGE_DRIVE, fileName);
+                DefaultConfigValues.FILE_PATH_IMAGE_DRIVE, fileName);
         BufferedImage edgeImage = imageProcessor.createEdgeImage(sourceImage);
         String[] split = fileName.split("\\.");
         imageProcessor.writeImage(edgeImage, dirPath, split[0] + "-edge.png");
@@ -69,17 +78,19 @@ public class Main
   public static void downsampleSvsFiles()
   {
     ImageProcessor imageProcessor = new ImageProcessor();
-    File directory = new File(DefaultPaths.FILE_PATH_IMAGE_DRIVE);
+    File directory = new File(DefaultConfigValues.FILE_PATH_IMAGE_DRIVE);
     String[] svsList = directory.list();
     for (String fileName : svsList)
     {
       try
       {
         BufferedImage downsampleImage = imageProcessor.downsampleImage(
-                DefaultPaths.FILE_PATH_IMAGE_DRIVE, fileName, 50, 50);
+                DefaultConfigValues.FILE_PATH_IMAGE_DRIVE, fileName, 
+                DefaultConfigValues.DOWNSAMPLE_FACTOR_X, 
+                DefaultConfigValues.DOWNSAMPLE_FACTOR_Y);
         String[] split = fileName.split("\\.");
         imageProcessor.writeImage(downsampleImage, 
-                DefaultPaths.FILE_PATH_IMAGE_DRIVE, split[0] + "-ds.png");
+                DefaultConfigValues.FILE_PATH_IMAGE_DRIVE, split[0] + "-ds.png");
 
         System.out.println("Success: wrote downsampled image " + fileName);
       }

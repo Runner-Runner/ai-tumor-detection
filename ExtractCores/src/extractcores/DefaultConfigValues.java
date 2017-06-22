@@ -1,7 +1,8 @@
 package extractcores;
 
-public interface DefaultPaths
+public interface DefaultConfigValues
 {
+  //Paths and file names
   public static final String FILE_BASE_PATH = "..\\data\\";
 
   public static final String FILE_PATH_EDGE = FILE_BASE_PATH + "edge output\\";
@@ -21,4 +22,8 @@ public interface DefaultPaths
   public static final String FILE_PATH_IMAGE_DRIVE = "E:\\HE_TMA\\";
   public static final String ABS_SAMPLE_FULL_IMAGE_DRIVE
           = "E:\\HE_TMA\\5512.svs";
+  
+  //Configuration Values
+  public static final int DOWNSAMPLE_FACTOR_X = 50;
+  public static final int DOWNSAMPLE_FACTOR_Y = 50;
 }
