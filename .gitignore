@@ -22,9 +22,11 @@
 hs_err_pid*
 
 
-#NB-specific:
+#project specific:
 build/
 dist/
 #Private folder in nbproject depends on the project's local configurations:
 private/
-#Test classes
+
+*.svs
+libs/
