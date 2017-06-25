@@ -2,7 +2,7 @@ package extractcores;
 
 import org.opencv.core.Rect;
 
-public class TissueCore {
+public class TissueCore implements Comparable<TissueCore> {
   private Rect boundingBox;
   private int centerX;
   private int centerY;
@@ -27,5 +27,11 @@ public class TissueCore {
   public int getCenterY()
   {
     return centerY;
+  }
+
+  @Override
+  public int compareTo(TissueCore otherCore)
+  {
+    //Wie nach vers. Kriterien sortierbar machen??
   }
 }
