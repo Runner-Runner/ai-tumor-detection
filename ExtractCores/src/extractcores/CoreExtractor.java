@@ -1,5 +1,7 @@
 package extractcores;
 
+import static extractcores.DefaultConfigValues.EXTREME_CORE_RATIO_THRESHOLD;
+import static extractcores.DefaultConfigValues.LARGE_CORE_AREA_THRESHOLD;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Rectangle;
@@ -141,7 +143,8 @@ public class CoreExtractor
       Rectangle boundingBox = unionCore.getBoundingBox();
       int boundingBoxArea = boundingBox.width * boundingBox.height;
       double sideRatio = Double.valueOf(boundingBox.height) / boundingBox.width;
-      if (boundingBoxArea > 3000 && sideRatio > 1.5)
+      if (boundingBoxArea > LARGE_CORE_AREA_THRESHOLD && 
+              sideRatio > EXTREME_CORE_RATIO_THRESHOLD)
       {
         continue;
       }

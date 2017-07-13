@@ -28,4 +28,6 @@ public interface DefaultConfigValues
   public static final int DOWNSAMPLE_FACTOR_Y = 50;
   
   public static final double MIN_CORE_SIDE_DISTANCE = 5;
+  public static final double LARGE_CORE_AREA_THRESHOLD = 3000;
+  public static final double EXTREME_CORE_RATIO_THRESHOLD = 1.5;
 }
