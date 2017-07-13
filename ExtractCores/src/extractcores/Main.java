@@ -14,27 +14,28 @@ public class Main
   public static void createLabelFile()
   {
     LabelProcessor labelProcessor = new LabelProcessor();
-    labelProcessor.writeTxtLabelFile(DefaultConfigValues.FILE_PATH_LABEL, 
+    labelProcessor.writeTxtLabelFile(DefaultConfigValues.FILE_PATH_LABEL,
             DefaultConfigValues.SAMPLE_XLS_LABEL);
   }
-  
+
   public static void createEdgeImage()
   {
     ImageProcessor imageProcessor = new ImageProcessor();
     BufferedImage sourceImage = imageProcessor.readImage(
             DefaultConfigValues.FILE_PATH_DOWNSAMPLE, DefaultConfigValues.SAMPLE_IMAGE_DS);
     BufferedImage edgeImage = imageProcessor.createEdgeImage(sourceImage);
-    imageProcessor.writeImage(edgeImage, DefaultConfigValues.FILE_PATH_EDGE, 
+    imageProcessor.writeImage(edgeImage, DefaultConfigValues.FILE_PATH_EDGE,
             DefaultConfigValues.SAMPLE_IMAGE_EDGE);
   }
-  
+
   public static void createDownsampleImage()
   {
     ImageProcessor imageProcessor = new ImageProcessor();
-    BufferedImage dsImage = imageProcessor.downsampleImage
-        ("E:\\HE_TMA\\", "39387.svs", DefaultConfigValues.DOWNSAMPLE_FACTOR_X, 
-                DefaultConfigValues.DOWNSAMPLE_FACTOR_Y);
-    imageProcessor.writeImage(dsImage, DefaultConfigValues.FILE_PATH_DOWNSAMPLE, 
+    BufferedImage dsImage = imageProcessor.downsampleImage(
+            "E:\\HE_TMA\\", "39387.svs", 
+            DefaultConfigValues.DOWNSAMPLE_FACTOR_X,
+            DefaultConfigValues.DOWNSAMPLE_FACTOR_Y);
+    imageProcessor.writeImage(dsImage, DefaultConfigValues.FILE_PATH_DOWNSAMPLE,
             "39387-ds.png");
   }
 
@@ -46,16 +47,30 @@ public class Main
             DefaultConfigValues.FILE_PATH_EDGE, DefaultConfigValues.SAMPLE_IMAGE_EDGE);
 
     CoreExtractor coreExtractor = new CoreExtractor();
-    coreExtractor.findCores(DefaultConfigValues.FILE_PATH_EDGE, 
+    coreExtractor.findCores(DefaultConfigValues.FILE_PATH_EDGE,
             DefaultConfigValues.SAMPLE_IMAGE_EDGE, DefaultConfigValues.SAMPLE_LABEL);
   }
-  
+
+  public static void createLabelIdentifyingImages()
+  {
+    String dirPath = "E:\\HE_TMA 2\\";
+    File directory = new File(dirPath);
+    String[] imgList = directory.list(
+            (File dir, String name)
+            -> name.substring(name.lastIndexOf(".")).toLowerCase().equals(".svs"));
+    ImageProcessor imageProcessor = new ImageProcessor();
+    for (String fileName : imgList)
+    {
+      imageProcessor.createLabelIdentifyingImage(dirPath, fileName);
+    }
+  }
+
   public static void createEdgeImages()
   {
     String dirPath = "E:\\ds_output\\";
-    ImageProcessor imageProcessor = new ImageProcessor();
     File directory = new File(dirPath);
     String[] imgList = directory.list();
+    ImageProcessor imageProcessor = new ImageProcessor();
     for (String fileName : imgList)
     {
       try
@@ -85,11 +100,11 @@ public class Main
       try
       {
         BufferedImage downsampleImage = imageProcessor.downsampleImage(
-                DefaultConfigValues.FILE_PATH_IMAGE_DRIVE, fileName, 
-                DefaultConfigValues.DOWNSAMPLE_FACTOR_X, 
+                DefaultConfigValues.FILE_PATH_IMAGE_DRIVE, fileName,
+                DefaultConfigValues.DOWNSAMPLE_FACTOR_X,
                 DefaultConfigValues.DOWNSAMPLE_FACTOR_Y);
         String[] split = fileName.split("\\.");
-        imageProcessor.writeImage(downsampleImage, 
+        imageProcessor.writeImage(downsampleImage,
                 DefaultConfigValues.FILE_PATH_IMAGE_DRIVE, split[0] + "-ds.png");
 
         System.out.println("Success: wrote downsampled image " + fileName);

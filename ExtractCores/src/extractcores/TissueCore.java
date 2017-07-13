@@ -1,20 +1,22 @@
 package extractcores;
 
-import org.opencv.core.Rect;
+import java.awt.Rectangle;
+import java.util.List;
 
-public class TissueCore {
-  private Rect boundingBox;
+public class TissueCore
+{
+  private Rectangle boundingBox;
   private int centerX;
   private int centerY;
-  
-  public TissueCore(Rect boundingBox)
+
+  public TissueCore(int x, int y, int width, int height)
   {
-    this.boundingBox = boundingBox;
-    centerX = (int)(boundingBox.x + Double.valueOf(boundingBox.width)/2);
-    centerY = (int)(boundingBox.y + Double.valueOf(boundingBox.height)/2);
+    boundingBox = new Rectangle(x, y, width, height);
+    centerX = (int) (x + Double.valueOf(width) / 2);
+    centerY = (int) (y + Double.valueOf(height) / 2);
   }
 
-  public Rect getBoundingBox()
+  public Rectangle getBoundingBox()
   {
     return boundingBox;
   }
@@ -27,5 +29,32 @@ public class TissueCore {
   public int getCenterY()
   {
     return centerY;
+  }
+
+  public boolean intersects(TissueCore otherCore)
+  {
+    return getBoundingBox().intersects(otherCore.getBoundingBox());
+  }
+  
+  @Override
+  public String toString()
+  {
+    return "(" + centerX + "/" + centerY + ")";
+  }
+  
+  public static TissueCore union(List<TissueCore> cores)
+  {
+    if(cores.size() == 1)
+    {
+      return cores.get(0);
+    }
+    
+    Rectangle unionBoundingBox = new Rectangle(-1, -1);
+    for(TissueCore core :cores)
+    {
+      unionBoundingBox = unionBoundingBox.union(core.getBoundingBox());
+    }
+    return new TissueCore(unionBoundingBox.x, unionBoundingBox.y, 
+            unionBoundingBox.width, unionBoundingBox.height);
   }
 }

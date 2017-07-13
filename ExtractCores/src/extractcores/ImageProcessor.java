@@ -26,7 +26,7 @@ public class ImageProcessor
     Rectangle sourceRegion = new Rectangle(x, y, width, height);
     param.setSourceRegion(sourceRegion);
 
-    return readImage(reader, param);
+    return readImage(reader, param, 0);
   }
 
   public BufferedImage downsampleImage(String filePath, String imageName,
@@ -36,10 +36,11 @@ public class ImageProcessor
     ImageReadParam param = reader.getDefaultReadParam();
     param.setSourceSubsampling(sampleFactorX, sampleFactorY, 0, 0);
 
-    return readImage(reader, param);
+    return readImage(reader, param, 0);
   }
 
-  private BufferedImage readImage(ImageReader reader, ImageReadParam param)
+  private BufferedImage readImage(ImageReader reader, ImageReadParam param,
+          int imageIndex)
   {
     try
     {
@@ -157,6 +158,30 @@ public class ImageProcessor
     }
   }
 
+  public void createLabelIdentifyingImage(String filePath, String imageName)
+  {
+    ImageReader imageReader = getImageReader(filePath, imageName);
+    try
+    {
+      BufferedImage labelImage = imageReader.read(5);
+
+      //Some svs files keep the label image at different index, check by dimensions of received image
+      int imageWidth = labelImage.getWidth();
+      int imageHeight = labelImage.getHeight();
+      if (Math.abs(imageWidth - imageHeight) > 100)
+      {
+        labelImage = imageReader.read(4);
+      }
+
+      writeImage(labelImage, filePath, appendFilename(imageName, "labelinfo", "png"));
+    }
+    catch (IOException ex)
+    {
+      System.out.println("Cannot read image.");
+      System.out.println(ex.getMessage());
+    }
+  }
+
   private static BufferedImage convert(BufferedImage src, int bufImgType)
   {
     BufferedImage img = new BufferedImage(src.getWidth(), src.getHeight(), bufImgType);
@@ -164,5 +189,16 @@ public class ImageProcessor
     g2d.drawImage(src, 0, 0, null);
     g2d.dispose();
     return img;
+  }
+
+  public static String appendFilename(String fileName, String suffix, String extension)
+  {
+    String[] split = fileName.split("\\.");
+    if (split.length != 2)
+    {
+      return null;
+    }
+    String fileExtension = extension == null ? split[1] : extension;
+    return split[0] + "-" + suffix + "." + fileExtension;
   }
 }
