@@ -57,13 +57,6 @@ public class CoreExtractor
       //TODO set max limit as well
       if (boundingBoxArea >= MIN_OBJECT_AREA)
       {
-        //Special case: skip bounding rectangles of at least full core size with 
-        //extreme ratio, indicating overlapping full cores on the array.
-        if (boundingBoxArea > 3000 && sideRatio > 1.5)
-        {
-          continue;
-        }
-
         allCores.add(new TissueCore(boundingBox.x, boundingBox.y,
                 boundingBox.width, boundingBox.height));
       }
@@ -78,7 +71,7 @@ public class CoreExtractor
     int foundCoreCount = mergedCores.size();
     int missingCoreCount = coreCount - foundCoreCount;
     String coreMessage;
-    if(missingCoreCount >= 0)
+    if (missingCoreCount >= 0)
     {
       coreMessage = " cores were not found.";
     }
@@ -87,7 +80,7 @@ public class CoreExtractor
       missingCoreCount *= -1;
       coreMessage = " redundant cores were found.";
     }
-    
+
     double coreDetectionPercentage
             = Double.valueOf(foundCoreCount)
             / coreCount * 100;
@@ -103,12 +96,11 @@ public class CoreExtractor
 
   private List<TissueCore> mergeIntersectingRectangles(List<TissueCore> sourceCores)
   {
-    //TODO don't merge if size gets above upperlimit AND side ratio above normal limit
     List<TissueCore> toBeGroupedCores = new ArrayList<>();
     toBeGroupedCores.addAll(sourceCores);
 
     List<List<TissueCore>> coreGroups = new ArrayList<>();
-    
+
     while (!toBeGroupedCores.isEmpty())
     {
       TissueCore sourceCore = toBeGroupedCores.remove(0);
@@ -117,7 +109,7 @@ public class CoreExtractor
       {
         for (TissueCore core : coreGroup)
         {
-          if (sourceCore.intersects(core))
+          if (sourceCore.intersects(core) || sourceCore.closeTo(core))
           {
             addToGroup = true;
             break;
@@ -142,19 +134,31 @@ public class CoreExtractor
 
     for (List<TissueCore> coreGroup : coreGroups)
     {
-      mergedCores.add(TissueCore.union(coreGroup));
+      TissueCore unionCore = TissueCore.union(coreGroup);
+
+      //Special case: skip bounding rectangles of at least full core size with 
+      //extreme ratio, indicating overlapping full cores on the array.
+      Rectangle boundingBox = unionCore.getBoundingBox();
+      int boundingBoxArea = boundingBox.width * boundingBox.height;
+      double sideRatio = Double.valueOf(boundingBox.height) / boundingBox.width;
+      if (boundingBoxArea > 3000 && sideRatio > 1.5)
+      {
+        continue;
+      }
+
+      mergedCores.add(unionCore);
     }
 
     //New mergeable groups can form after merging.
     //-> Recursively merge until number of cores after merging is unchanged.
-    if(mergedCores.size() != sourceCores.size())
+    if (mergedCores.size() != sourceCores.size())
     {
       mergedCores = mergeIntersectingRectangles(mergedCores);
     }
     return mergedCores;
   }
 
-  private Rectangle[][] orderRectangles(LabelInformation labelInformation, 
+  private Rectangle[][] orderRectangles(LabelInformation labelInformation,
           List<TissueCore> cores)
   {
     int rowCount = labelInformation.getRowCount();
@@ -182,12 +186,12 @@ public class CoreExtractor
     g.setColor(Color.red);
     for (TissueCore core : allCores)
     {
-      if(!mergedCores.contains(core))
+      if (!mergedCores.contains(core))
       {
         drawBoundingBox(g, core);
       }
     }
-    
+
     g.setColor(Color.green);
     for (TissueCore core : mergedCores)
     {

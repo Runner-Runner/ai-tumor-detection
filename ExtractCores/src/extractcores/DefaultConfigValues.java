@@ -26,4 +26,6 @@ public interface DefaultConfigValues
   //Configuration Values
   public static final int DOWNSAMPLE_FACTOR_X = 50;
   public static final int DOWNSAMPLE_FACTOR_Y = 50;
+  
+  public static final double MIN_CORE_SIDE_DISTANCE = 5;
 }
