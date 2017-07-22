@@ -1,7 +1,9 @@
 package extractcores;
 
+import static extractcores.CoreComparator.CompareType.*;
 import static extractcores.DefaultConfigValues.EXTREME_CORE_RATIO_THRESHOLD;
 import static extractcores.DefaultConfigValues.LARGE_CORE_AREA_THRESHOLD;
+import static extractcores.DefaultConfigValues.MIN_OBJECT_AREA;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Rectangle;
@@ -19,9 +21,6 @@ import org.opencv.imgproc.Imgproc;
 
 public class CoreExtractor
 {
-  public static final int MIN_OBJECT_AREA = 100;
-  public static final int MIN_CORE_AREA = 1800;
-
   public CoreExtractor()
   {
     System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
@@ -93,7 +92,7 @@ public class CoreExtractor
     createCoreInformation(edgeImage, allCores, mergedCores, edgeFileName,
             boundingAreas, boundingSideRatios);
 
-    return orderRectangles(labelInformation, mergedCores);
+    return orderRectanglesHungarian(labelInformation, mergedCores);
   }
 
   private List<TissueCore> mergeIntersectingRectangles(List<TissueCore> sourceCores)
@@ -161,18 +160,64 @@ public class CoreExtractor
     return mergedCores;
   }
 
-  private Rectangle[][] orderRectangles(LabelInformation labelInformation,
+  private Rectangle[][] orderRectanglesHungarian(LabelInformation labelInformation,
           List<TissueCore> cores)
   {
-    int rowCount = labelInformation.getRowCount();
+    ImageProcessor imageProcessor = new ImageProcessor();
+    BufferedImage edgeImage = imageProcessor.readImage(
+            DefaultConfigValues.FILE_PATH_EDGE, 
+            DefaultConfigValues.SAMPLE_IMAGE_EDGE);
+    Graphics g = edgeImage.getGraphics();
+    g.setColor(Color.green);
+    
     int columnCount = labelInformation.getColumnCount();
+    int rowCount = labelInformation.getRowCount();
     Rectangle[][] coreCoordinates = new Rectangle[rowCount][columnCount];
-
+    
+    int imageWidth = edgeImage.getWidth();
+    int imageHeight = edgeImage.getHeight();
+    
+    //Min/Max in x/y
     CoreComparator coreComparator = new CoreComparator();
+    coreComparator.setComparisonType(HORIZONTAL_LEFT);
     Collections.sort(cores, coreComparator);
-
-    System.out.println(Arrays.toString(cores.toArray()));
-
+    TissueCore leftestCore = cores.get(0);
+    coreComparator.setComparisonType(HORIZONTAL_RIGHT);
+    Collections.sort(cores, coreComparator);
+    TissueCore rightestCore = cores.get(cores.size()-1);
+    coreComparator.setComparisonType(VERTICAL_UP);
+    Collections.sort(cores, coreComparator);
+    TissueCore topCore = cores.get(0);
+    coreComparator.setComparisonType(VERTICAL_BOTTOM);
+    Collections.sort(cores, coreComparator);
+    TissueCore bottomCore = cores.get(cores.size()-1);
+    
+    int minX = leftestCore.getBoundingBox().x;
+    int maxX = rightestCore.getBoundingBox().x + rightestCore.getBoundingBox().width;
+    int minY = topCore.getBoundingBox().y;
+    int maxY = bottomCore.getBoundingBox().y + bottomCore.getBoundingBox().height;
+    
+    double intervalWidth = Double.valueOf(maxX - minX)/columnCount;
+    double intervalHeight = Double.valueOf(maxY - minY)/rowCount;
+    
+    int x = minX;
+    for(int i=0; i<=columnCount; i++)
+    {
+      g.drawLine(x,0,x,imageHeight);
+      x += intervalWidth;
+    }
+    int y = minY;
+    for(int i=0; i<=rowCount; i++)
+    {
+      g.drawLine(0,y,imageWidth,y);
+      y += intervalHeight;
+    }
+    
+    //TODO
+    
+    g.dispose();
+    imageProcessor.writeImage(edgeImage, DefaultConfigValues.FILE_PATH_INFORMATIVE, "assignment-test.png");
+    
     return coreCoordinates;
   }
 
@@ -191,7 +236,7 @@ public class CoreExtractor
     {
       if (!mergedCores.contains(core))
       {
-        drawBoundingBox(g, core);
+//        drawBoundingBox(g, core);
       }
     }
 
@@ -221,8 +266,8 @@ public class CoreExtractor
     Rectangle boundingBox = core.getBoundingBox();
     g.drawRect(boundingBox.x, boundingBox.y,
             boundingBox.width, boundingBox.height);
-    g.drawString(String.valueOf(boundingBox.width * boundingBox.height),
-            boundingBox.x + boundingBox.width + 5,
-            boundingBox.y + boundingBox.height);
+//    g.drawString(String.valueOf(boundingBox.width * boundingBox.height),
+//            boundingBox.x + boundingBox.width + 5,
+//            boundingBox.y + boundingBox.height);
   }
 }

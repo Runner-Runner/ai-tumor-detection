@@ -26,7 +26,7 @@ public static int aaa = 0;
     return centerX;
   }
 
-  public int getCenterY()
+public int getCenterY()
   {
     return centerY;
   }
