@@ -6,5 +6,5 @@ package extractcores;
  */
 public enum CoreLabel
 {
-  TUMOR, NORMAL, GAP
+  TUMOR, NORMAL, GAP, CONTROL, UNDEFINED
 }

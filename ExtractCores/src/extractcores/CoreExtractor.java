@@ -1,9 +1,10 @@
 package extractcores;
 
-import static extractcores.CoreComparator.CompareType.*;
+import extractcores.assignmentproblem.HungarianAssignmentSolver;
 import static extractcores.DefaultConfigValues.EXTREME_CORE_RATIO_THRESHOLD;
 import static extractcores.DefaultConfigValues.LARGE_CORE_AREA_THRESHOLD;
 import static extractcores.DefaultConfigValues.MIN_OBJECT_AREA;
+import extractcores.assignmentproblem.SimpleGridSolver;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Rectangle;
@@ -26,7 +27,7 @@ public class CoreExtractor
     System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
   }
 
-  public Rectangle[][] findCores(String pathName, String edgeFileName,
+  public List<TissueCore> findCores(String pathName, String edgeFileName,
           String labelFileName)
   {
     LabelProcessor labelProcessor = new LabelProcessor();
@@ -92,7 +93,7 @@ public class CoreExtractor
     createCoreInformation(edgeImage, allCores, mergedCores, edgeFileName,
             boundingAreas, boundingSideRatios);
 
-    return orderRectanglesHungarian(labelInformation, mergedCores);
+    return assignLabels(labelInformation, mergedCores);
   }
 
   private List<TissueCore> mergeIntersectingRectangles(List<TissueCore> sourceCores)
@@ -160,65 +161,14 @@ public class CoreExtractor
     return mergedCores;
   }
 
-  private Rectangle[][] orderRectanglesHungarian(LabelInformation labelInformation,
+  private List<TissueCore> assignLabels(LabelInformation labelInformation,
           List<TissueCore> cores)
   {
-    ImageProcessor imageProcessor = new ImageProcessor();
-    BufferedImage edgeImage = imageProcessor.readImage(
-            DefaultConfigValues.FILE_PATH_EDGE, 
-            DefaultConfigValues.SAMPLE_IMAGE_EDGE);
-    Graphics g = edgeImage.getGraphics();
-    g.setColor(Color.green);
+    HungarianAssignmentSolver assignmentSolver = new HungarianAssignmentSolver(cores, labelInformation);
+    return assignmentSolver.createLabeledCores();
     
-    int columnCount = labelInformation.getColumnCount();
-    int rowCount = labelInformation.getRowCount();
-    Rectangle[][] coreCoordinates = new Rectangle[rowCount][columnCount];
-    
-    int imageWidth = edgeImage.getWidth();
-    int imageHeight = edgeImage.getHeight();
-    
-    //Min/Max in x/y
-    CoreComparator coreComparator = new CoreComparator();
-    coreComparator.setComparisonType(HORIZONTAL_LEFT);
-    Collections.sort(cores, coreComparator);
-    TissueCore leftestCore = cores.get(0);
-    coreComparator.setComparisonType(HORIZONTAL_RIGHT);
-    Collections.sort(cores, coreComparator);
-    TissueCore rightestCore = cores.get(cores.size()-1);
-    coreComparator.setComparisonType(VERTICAL_UP);
-    Collections.sort(cores, coreComparator);
-    TissueCore topCore = cores.get(0);
-    coreComparator.setComparisonType(VERTICAL_BOTTOM);
-    Collections.sort(cores, coreComparator);
-    TissueCore bottomCore = cores.get(cores.size()-1);
-    
-    int minX = leftestCore.getBoundingBox().x;
-    int maxX = rightestCore.getBoundingBox().x + rightestCore.getBoundingBox().width;
-    int minY = topCore.getBoundingBox().y;
-    int maxY = bottomCore.getBoundingBox().y + bottomCore.getBoundingBox().height;
-    
-    double intervalWidth = Double.valueOf(maxX - minX)/columnCount;
-    double intervalHeight = Double.valueOf(maxY - minY)/rowCount;
-    
-    int x = minX;
-    for(int i=0; i<=columnCount; i++)
-    {
-      g.drawLine(x,0,x,imageHeight);
-      x += intervalWidth;
-    }
-    int y = minY;
-    for(int i=0; i<=rowCount; i++)
-    {
-      g.drawLine(0,y,imageWidth,y);
-      y += intervalHeight;
-    }
-    
-    //TODO
-    
-    g.dispose();
-    imageProcessor.writeImage(edgeImage, DefaultConfigValues.FILE_PATH_INFORMATIVE, "assignment-test.png");
-    
-    return coreCoordinates;
+//    SimpleGridSolver solver = new SimpleGridSolver(cores, labelInformation);
+//    return solver.createLabeledCores();
   }
 
   private void createCoreInformation(BufferedImage edgeImage,
@@ -236,7 +186,7 @@ public class CoreExtractor
     {
       if (!mergedCores.contains(core))
       {
-//        drawBoundingBox(g, core);
+        drawBoundingBox(g, core);
       }
     }
 

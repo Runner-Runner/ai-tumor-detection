@@ -173,10 +173,8 @@ public class LabelProcessor
       for (int j = 0; j < labelArray[0].length; j++)
       {
         String labelText = labelArray[i][j];
-        CoreLabel coreLabel = null;
-        if (labelText.startsWith("W")
-                || labelText.startsWith("N")
-                || labelText.startsWith("C")
+        CoreLabel coreLabel;
+        if (labelText.startsWith("N")
                 || labelText.startsWith("A")
                 || labelText.startsWith("B"))
         {
@@ -191,9 +189,14 @@ public class LabelProcessor
         {
           coreLabel = CoreLabel.GAP;
         }
+        else if (labelText.startsWith("W")
+                || labelText.startsWith("C"))
+        {
+          coreLabel = CoreLabel.CONTROL;
+        }
         else
         {
-          coreLabel = CoreLabel.GAP;
+          coreLabel = CoreLabel.UNDEFINED;
         }
 
         coreLabelArray[i][j] = coreLabel;

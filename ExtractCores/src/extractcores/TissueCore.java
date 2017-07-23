@@ -8,7 +8,8 @@ public class TissueCore
   private Rectangle boundingBox;
   private int centerX;
   private int centerY;
-public static int aaa = 0;
+  private CoreLabel label = CoreLabel.UNDEFINED;
+
   public TissueCore(int x, int y, int width, int height)
   {
     boundingBox = new Rectangle(x, y, width, height);
@@ -26,11 +27,21 @@ public static int aaa = 0;
     return centerX;
   }
 
-public int getCenterY()
+  public int getCenterY()
   {
     return centerY;
   }
 
+  public CoreLabel getLabel()
+  {
+    return label;
+  }
+
+  public void setLabel(CoreLabel label)
+  {
+    this.label = label;
+  }
+  
   @Override
   public String toString()
   {
@@ -74,20 +85,20 @@ public int getCenterY()
     boolean bottom = boundingBox.getMaxY() < otherBoundingBox.getMinY();
 
     double sideDistance;
-    
-    if(left && !top && !bottom)
+
+    if (left && !top && !bottom)
     {
       sideDistance = boundingBox.getMinX() - otherBoundingBox.getMaxX();
     }
-    else if(right && !top && !bottom)
+    else if (right && !top && !bottom)
     {
       sideDistance = otherBoundingBox.getMinX() - boundingBox.getMaxX();
     }
-    else if(top && !left && !right)
+    else if (top && !left && !right)
     {
       sideDistance = boundingBox.getMinY() - otherBoundingBox.getMaxY();
     }
-    else if(bottom && !left && !right)
+    else if (bottom && !left && !right)
     {
       sideDistance = otherBoundingBox.getMinY() - boundingBox.getMaxY();
     }

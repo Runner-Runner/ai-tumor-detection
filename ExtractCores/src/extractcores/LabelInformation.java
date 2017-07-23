@@ -22,9 +22,13 @@ public class LabelInformation
     this.coreCount = tumorCount + normalCount;
   }
 
-  public CoreLabel[][] getCoreLabelArray()
+  public CoreLabel getCoreLabel(int r, int c)
   {
-    return coreLabelArray;
+    if (r >= rowCount || c >= columnCount)
+    {
+      return null;
+    }
+    return coreLabelArray[r][c];
   }
 
   public int getColumnCount()
