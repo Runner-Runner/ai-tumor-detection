@@ -19,7 +19,7 @@ public class LabelInformation
     this.tumorCount = tumorCount;
     this.normalCount = normalCount;
     this.gapCount = gapCount;
-    this.coreCount = tumorCount + normalCount;
+    this.coreCount = rowCount * columnCount - gapCount;
   }
 
   public CoreLabel getCoreLabel(int r, int c)
