@@ -34,9 +34,8 @@ public class SimpleGridSolver extends GridSolver
       }
       resultIndices[i] = lowestValueIndex;
 
-      int rowIndex = lowestValueIndex / labelInformation.getRowCount();
-      int columnIndex = lowestValueIndex % labelInformation.getRowCount();
-      CoreLabel coreLabel = labelInformation.getCoreLabel(rowIndex, columnIndex);
+      int[] indices = get2dIndices(lowestValueIndex);
+      CoreLabel coreLabel = labelInformation.getCoreLabel(indices[0], indices[1]);
       if (coreLabel != null)
       {
         cores.get(i).setLabel(coreLabel);

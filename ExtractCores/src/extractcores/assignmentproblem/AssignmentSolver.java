@@ -71,61 +71,7 @@ public abstract class AssignmentSolver
     intervalHeight = Double.valueOf(maxY - minY) / rowCount;
   }
 
-  protected void createAssignmentInformation(int[] resultIndices)
-  {
-    //TODO Make file name generic
-    ImageProcessor imageProcessor = new ImageProcessor();
-    BufferedImage edgeImage = imageProcessor.readImage(
-            DefaultConfigValues.FILE_PATH_EDGE,
-            DefaultConfigValues.SAMPLE_IMAGE_EDGE);
-    Graphics2D g = (Graphics2D) edgeImage.getGraphics();
-    g.setColor(Color.LIGHT_GRAY);
-
-    int x = minX;
-    for (int i = 0; i <= labelInformation.getColumnCount(); i++)
-    {
-      g.drawLine(x, minY, x, maxY);
-      x += intervalWidth;
-    }
-    int y = minY;
-    for (int i = 0; i <= labelInformation.getRowCount(); i++)
-    {
-      g.drawLine(minX, y, maxX, y);
-      y += intervalHeight;
-    }
-
-    double radiusWidth = intervalWidth / 2;
-    double radiusHeight = intervalHeight / 2;
-
-    g.setColor(Color.RED);
-    Stroke dashed = new BasicStroke(3, BasicStroke.CAP_BUTT,
-            BasicStroke.JOIN_BEVEL, 0, new float[]
-            {
-              9
-            }, 0);
-    g.setStroke(dashed);
-
-    for (int i = 0; i < cores.size(); i++)
-    {
-      TissueCore core = cores.get(i);
-      
-      int gridIndex = resultIndices[i];
-      if(gridIndex == 0)
-      {
-        continue;
-      }
-      int rowIndex = gridIndex / labelInformation.getRowCount();
-      int columnIndex = gridIndex % labelInformation.getRowCount();
-      int cellCenterX = (int)(minX + columnIndex * intervalWidth + radiusWidth);
-      int cellCenterY = (int)(minY + rowIndex * intervalHeight + radiusHeight);
-      
-      g.drawLine(core.getCenterX(), core.getCenterY(), cellCenterX, cellCenterY);
-    }
-
-    g.dispose();
-    imageProcessor.writeImage(edgeImage,
-            DefaultConfigValues.FILE_PATH_INFORMATIVE, "assignment-test.png");
-  }
+  protected abstract void createAssignmentInformation(int[] resultIndices);
 
   protected static double calculateCost(TissueCore tissueCore, double gridCellCenterX,
           double gridCellCenterY)

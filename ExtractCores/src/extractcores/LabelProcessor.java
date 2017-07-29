@@ -130,6 +130,8 @@ public class LabelProcessor
           case GAP:
             gapCount++;
             break;
+          default:
+            break;
         }
       }
     }

@@ -1,7 +1,14 @@
 package extractcores.assignmentproblem;
 
+import extractcores.DefaultConfigValues;
+import extractcores.ImageProcessor;
 import extractcores.LabelInformation;
 import extractcores.TissueCore;
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.Stroke;
+import java.awt.image.BufferedImage;
 import java.util.List;
 
 public abstract class GridSolver extends AssignmentSolver
@@ -11,30 +18,95 @@ public abstract class GridSolver extends AssignmentSolver
     super(cores, labelInformation);
   }
 
+  @Override
+  protected void createAssignmentInformation(int[] resultIndices)
+  {
+    //TODO Make file name generic
+    ImageProcessor imageProcessor = new ImageProcessor();
+    BufferedImage edgeImage = imageProcessor.readImage(
+            DefaultConfigValues.FILE_PATH_EDGE,
+            DefaultConfigValues.SAMPLE_IMAGE_EDGE);
+    Graphics2D g = (Graphics2D) edgeImage.getGraphics();
+    g.setColor(Color.LIGHT_GRAY);
+
+    int x = minX;
+    for (int i = 0; i <= labelInformation.getColumnCount(); i++)
+    {
+      g.drawLine(x, minY, x, maxY);
+      x += intervalWidth;
+    }
+    int y = minY;
+    for (int i = 0; i <= labelInformation.getRowCount(); i++)
+    {
+      g.drawLine(minX, y, maxX, y);
+      y += intervalHeight;
+    }
+
+    double radiusWidth = intervalWidth / 2;
+    double radiusHeight = intervalHeight / 2;
+
+    g.setColor(Color.RED);
+    Stroke dashed = new BasicStroke(3, BasicStroke.CAP_BUTT,
+            BasicStroke.JOIN_BEVEL, 0, new float[]
+            {
+              9
+            }, 0);
+    g.setStroke(dashed);
+
+    for (int i = 0; i < cores.size(); i++)
+    {
+      TissueCore core = cores.get(i);
+
+      int gridIndex = resultIndices[i];
+      if (gridIndex == 0)
+      {
+        continue;
+      }
+      int[] indices = get2dIndices(gridIndex);
+      int cellCenterX = (int) (minX + indices[1] * intervalWidth + radiusWidth);
+      int cellCenterY = (int) (minY + indices[0] * intervalHeight + radiusHeight);
+
+      g.drawLine(core.getCenterX(), core.getCenterY(), cellCenterX, cellCenterY);
+    }
+
+    g.dispose();
+    imageProcessor.writeImage(edgeImage,
+            DefaultConfigValues.FILE_PATH_INFORMATIVE, "assignment-test.png");
+  }
+
   protected int[][] createCostMatrix()
   {
     double radiusWidth = intervalWidth / 2;
     double radiusHeight = intervalHeight / 2;
 
-    int rowCount = cores.size();
-    int columnCount = labelInformation.getRowCount() * labelInformation.
+    int coreCount = cores.size();
+    int cellCount = labelInformation.getRowCount() * labelInformation.
             getColumnCount();
-    int[][] inputMatrix = new int[rowCount][columnCount];
+    int[][] inputMatrix = new int[coreCount][cellCount];
 
-    for (int r = 0; r < rowCount; r++)
+    for (int r = 0; r < coreCount; r++)
     {
       TissueCore core = cores.get(r);
 
-      for (int c = 0; c < columnCount; c++)
+      for (int c = 0; c < cellCount; c++)
       {
-        int rowIndex = c / labelInformation.getRowCount();
-        int columnIndex = c % labelInformation.getRowCount();
-        int cellCenterX = (int) (minX + columnIndex * intervalWidth + radiusWidth);
-        int cellCenterY = (int) (minY + rowIndex * intervalHeight + radiusHeight);
+        int[] indices = get2dIndices(c);
+        int cellCenterX = (int) (minX + indices[1] * intervalWidth + radiusWidth);
+        int cellCenterY = (int) (minY + indices[0] * intervalHeight + radiusHeight);
         inputMatrix[r][c] = (int) calculateCost(core, cellCenterX, cellCenterY);
       }
     }
     return inputMatrix;
+  }
+
+  protected int[] get2dIndices(int index)
+  {
+    int rowIndex = index / labelInformation.getColumnCount();
+    int columnIndex = index % labelInformation.getColumnCount();
+    return new int[]
+    {
+      rowIndex, columnIndex
+    };
   }
 
 }
