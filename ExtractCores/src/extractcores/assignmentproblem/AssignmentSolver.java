@@ -6,15 +6,8 @@ import static extractcores.CoreComparator.CompareType.HORIZONTAL_RIGHT;
 import static extractcores.CoreComparator.CompareType.VERTICAL_BOTTOM;
 import static extractcores.CoreComparator.CompareType.VERTICAL_CENTER;
 import static extractcores.CoreComparator.CompareType.VERTICAL_UP;
-import extractcores.DefaultConfigValues;
-import extractcores.ImageProcessor;
 import extractcores.LabelInformation;
 import extractcores.TissueCore;
-import java.awt.BasicStroke;
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.Stroke;
-import java.awt.image.BufferedImage;
 import java.util.Collections;
 import java.util.List;
 
@@ -22,7 +15,8 @@ public abstract class AssignmentSolver
 {
   protected List<TissueCore> cores;
   protected LabelInformation labelInformation;
-
+  protected String edgeFileName;
+  
   protected int minX;
   protected int maxX;
   protected int minY;
@@ -30,10 +24,12 @@ public abstract class AssignmentSolver
   protected double intervalWidth;
   protected double intervalHeight;
 
-  public AssignmentSolver(List<TissueCore> cores, LabelInformation labelInformation)
+  public AssignmentSolver(List<TissueCore> cores, 
+          LabelInformation labelInformation, String edgeFileName)
   {
     this.cores = cores;
     this.labelInformation = labelInformation;
+    this.edgeFileName = edgeFileName;
   }
 
   public abstract List<TissueCore> createLabeledCores();

@@ -7,9 +7,10 @@ import java.util.List;
 
 public class SimpleGridSolver extends GridSolver
 {
-  public SimpleGridSolver(List<TissueCore> cores, LabelInformation labelInformation)
+  public SimpleGridSolver(List<TissueCore> cores, 
+          LabelInformation labelInformation, String edgeFileName)
   {
-    super(cores, labelInformation);
+    super(cores, labelInformation, edgeFileName);
   }
 
   @Override

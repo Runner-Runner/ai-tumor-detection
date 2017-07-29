@@ -93,7 +93,7 @@ public class CoreExtractor
     createCoreInformation(edgeImage, allCores, mergedCores, edgeFileName,
             boundingAreas, boundingSideRatios);
 
-    return assignLabels(labelInformation, mergedCores);
+    return assignLabels(labelInformation, mergedCores, edgeFileName);
   }
 
   private List<TissueCore> mergeIntersectingRectangles(List<TissueCore> sourceCores)
@@ -162,13 +162,15 @@ public class CoreExtractor
   }
 
   private List<TissueCore> assignLabels(LabelInformation labelInformation,
-          List<TissueCore> cores)
+          List<TissueCore> cores, String edgeFileName)
   {
-    HungarianAssignmentSolver assignmentSolver = new HungarianAssignmentSolver(cores, labelInformation);
-    return assignmentSolver.createLabeledCores();
+//    HungarianAssignmentSolver assignmentSolver = new HungarianAssignmentSolver(
+//            cores, labelInformation, edgeFileName);
+//    return assignmentSolver.createLabeledCores();
     
-//    SimpleGridSolver solver = new SimpleGridSolver(cores, labelInformation);
-//    return solver.createLabeledCores();
+    SimpleGridSolver solver = new SimpleGridSolver(cores, labelInformation, 
+            edgeFileName);
+    return solver.createLabeledCores();
   }
 
   private void createCoreInformation(BufferedImage edgeImage,

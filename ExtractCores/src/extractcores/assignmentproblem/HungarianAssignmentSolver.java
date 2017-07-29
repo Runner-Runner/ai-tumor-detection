@@ -9,9 +9,10 @@ import java.util.List;
 
 public class HungarianAssignmentSolver extends GridSolver
 {
-  public HungarianAssignmentSolver(List<TissueCore> cores, LabelInformation labelInformation)
+  public HungarianAssignmentSolver(List<TissueCore> cores, 
+          LabelInformation labelInformation, String edgeFileName)
   {
-    super(cores, labelInformation);
+    super(cores, labelInformation, edgeFileName);
   }
 
   @Override

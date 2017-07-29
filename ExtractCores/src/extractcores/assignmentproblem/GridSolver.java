@@ -2,6 +2,7 @@ package extractcores.assignmentproblem;
 
 import extractcores.DefaultConfigValues;
 import extractcores.ImageProcessor;
+import static extractcores.ImageProcessor.appendFilename;
 import extractcores.LabelInformation;
 import extractcores.TissueCore;
 import java.awt.BasicStroke;
@@ -13,19 +14,19 @@ import java.util.List;
 
 public abstract class GridSolver extends AssignmentSolver
 {
-  public GridSolver(List<TissueCore> cores, LabelInformation labelInformation)
+  public GridSolver(List<TissueCore> cores, LabelInformation labelInformation,
+          String edgeFileName)
   {
-    super(cores, labelInformation);
+    super(cores, labelInformation, edgeFileName);
   }
 
   @Override
   protected void createAssignmentInformation(int[] resultIndices)
   {
-    //TODO Make file name generic
     ImageProcessor imageProcessor = new ImageProcessor();
     BufferedImage edgeImage = imageProcessor.readImage(
             DefaultConfigValues.FILE_PATH_EDGE,
-            DefaultConfigValues.SAMPLE_IMAGE_EDGE);
+            edgeFileName);
     Graphics2D g = (Graphics2D) edgeImage.getGraphics();
     g.setColor(Color.LIGHT_GRAY);
 
@@ -71,7 +72,8 @@ public abstract class GridSolver extends AssignmentSolver
 
     g.dispose();
     imageProcessor.writeImage(edgeImage,
-            DefaultConfigValues.FILE_PATH_INFORMATIVE, "assignment-test.png");
+            DefaultConfigValues.FILE_PATH_INFORMATIVE, 
+            appendFilename(edgeFileName, "assign", "png"));
   }
 
   protected int[][] createCostMatrix()
