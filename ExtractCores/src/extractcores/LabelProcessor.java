@@ -9,7 +9,11 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.usermodel.HSSFRow;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
@@ -19,7 +23,7 @@ import org.apache.poi.util.StringUtil;
 
 public class LabelProcessor
 {
-  public void writeTxtLabelFile(String pathName, String fileName)
+  public void writeTxtLabelFile(String pathName, String svsFileName)
   {
     Properties crossref = new Properties();
     InputStream propStream;
@@ -35,14 +39,18 @@ public class LabelProcessor
     }
 
     //Extract key from last part of filename
-    String[] split = fileName.split(" ");
-    String labelKey = split[2].split("\\.")[0];
-    String correspondingSvsName = crossref.getProperty(labelKey);
+    Pattern digitPattern = Pattern.compile("^(\\d+)[^\\d]*");
+    Matcher matcher = digitPattern.matcher(svsFileName);
+    boolean matches = matcher.matches();
+    String digitKey = matcher.group(1);
+
+    String xlsPostfix = crossref.getProperty(digitKey);
 
     FileInputStream fileStream;
     try
     {
-      fileStream = new FileInputStream(pathName + fileName);
+      fileStream = new FileInputStream(pathName + DefaultConfigValues.XLS_PREFIX
+              + xlsPostfix + ".XLS");
     }
     catch (FileNotFoundException ex)
     {
@@ -74,15 +82,28 @@ public class LabelProcessor
       {
         HSSFRow hssfRow = sheet.getRow(i);
         HSSFCell cell = hssfRow.getCell(0);
-        if (!cell.getStringCellValue().isEmpty())
+        if (cell != null && !cell.getStringCellValue().isEmpty())
         {
           realRowCount++;
         }
       }
 
-      labelArray = new String[realRowCount][columnCount];
+      //Repeat with columns, skip first row
+      int realColumnCount = 0;
+      HSSFRow secondRow = sheet.getRow(1);
+      for (int i = 0; i < columnCount; i++)
+      {
+        HSSFCell cell = secondRow.getCell(i);
+        if (cell != null && !cell.getStringCellValue().isEmpty())
+        {
+          realColumnCount++;
+        }
+      }
+
+      labelArray = new String[realRowCount][realColumnCount];
 
       //Run through the whole rows now and store label values
+      List<Integer> skipColumnIndices = new ArrayList<>();
       int realRowIndex = -1;
       outer:
       for (int i = 1; i < rowCount; i++)
@@ -91,19 +112,41 @@ public class LabelProcessor
         HSSFRow hssfRow = sheet.getRow(i);
         int specificColumnCount = hssfRow.getPhysicalNumberOfCells();
 
+        int realColumnIndex = -1;
         for (int j = 0; j < specificColumnCount; j++)
         {
-          HSSFCell cell = hssfRow.getCell(j);
-          String stringCellValue = cell.getStringCellValue();
-          //Skip empty rows
-          if (cell.getStringCellValue().isEmpty())
-          {
-            realRowIndex--;
-            continue outer;
-          }
-          labelArray[realRowIndex][j] = stringCellValue;
-        }
+          realColumnIndex++;
 
+          HSSFCell cell = hssfRow.getCell(j);
+          String stringCellValue = cell == null ? "" : cell.getStringCellValue();
+
+          if (stringCellValue.isEmpty())
+          {
+            //Skip empty rows
+            if (j == 0)
+            {
+              realRowIndex--;
+              continue outer;
+            }
+            //Skip empty columns (compare with empty cells in second row)
+            else if (i == 1)
+            {
+              skipColumnIndices.add(j);
+              realColumnIndex--;
+              continue;
+            }
+            else if (skipColumnIndices.contains(j))
+            {
+              realColumnIndex--;
+              continue;
+            }
+
+            //Otherwise, empty value in row with values in previous cells? 
+            //-> Treat as gap
+            stringCellValue = "gap";
+          }
+          labelArray[realRowIndex][realColumnIndex] = stringCellValue;
+        }
       }
     }
     catch (IOException ex)
@@ -136,7 +179,7 @@ public class LabelProcessor
       }
     }
 
-    File outputFile = new File(pathName + correspondingSvsName + "-label.txt");
+    File outputFile = new File(pathName + digitKey + "-label.txt");
     try
     {
       BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile));
