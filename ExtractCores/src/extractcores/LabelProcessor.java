@@ -41,10 +41,25 @@ public class LabelProcessor
     //Extract key from last part of filename
     Pattern digitPattern = Pattern.compile("^(\\d+)[^\\d]*");
     Matcher matcher = digitPattern.matcher(svsFileName);
-    boolean matches = matcher.matches();
     String digitKey = matcher.group(1);
 
     String xlsPostfix = crossref.getProperty(digitKey);
+
+    if (xlsPostfix == null)
+    {
+      System.out.println("Could not find XLS name for image file '"
+              + digitKey + "'");
+      return;
+    }
+
+    if (!(new File(pathName + DefaultConfigValues.XLS_PREFIX
+            + xlsPostfix + ".XLS")).exists())
+    {
+      System.out.println("Could not find XLS Label File for image file '"
+              + digitKey + "': " + pathName + DefaultConfigValues.XLS_PREFIX
+              + xlsPostfix + ".XLS");
+      return;
+    }
 
     FileInputStream fileStream;
     try
