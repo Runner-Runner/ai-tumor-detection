@@ -8,47 +8,55 @@ public class Main
 {
   public static void main(String[] args) throws IOException
   {
-    findCores();
+    processImage(null, "5707");
   }
 
-  public static void createLabelFile()
+  public static void processImage(String path, String digitKey)
+  {
+    createDownsampleImage(path, digitKey);
+    createEdgeImage(digitKey);
+    createLabelFile(digitKey);
+    findCores(digitKey);
+  }
+  
+  public static void createLabelFile(String digitKey)
   {
     LabelProcessor labelProcessor = new LabelProcessor();
     labelProcessor.writeTxtLabelFile(DefaultConfigValues.FILE_PATH_LABEL,
-            DefaultConfigValues.SAMPLE_XLS_LABEL);
+            digitKey + "-ds.png");
   }
 
-  public static void createEdgeImage()
+  public static void createEdgeImage(String digitKey)
   {
     ImageProcessor imageProcessor = new ImageProcessor();
     BufferedImage sourceImage = imageProcessor.readImage(
-            DefaultConfigValues.FILE_PATH_DOWNSAMPLE, DefaultConfigValues.SAMPLE_IMAGE_DS);
+            DefaultConfigValues.FILE_PATH_DOWNSAMPLE, digitKey + "-ds.png");
     BufferedImage edgeImage = imageProcessor.createEdgeImage(sourceImage);
-    imageProcessor.writeImage(edgeImage, DefaultConfigValues.FILE_PATH_EDGE,
-            DefaultConfigValues.SAMPLE_IMAGE_EDGE);
+    imageProcessor.writeImage(edgeImage, DefaultConfigValues.FILE_PATH_EDGE, 
+            digitKey + "-edge.png");
   }
 
-  public static void createDownsampleImage()
+  public static void createDownsampleImage(String path, String digitKey)
   {
     ImageProcessor imageProcessor = new ImageProcessor();
     BufferedImage dsImage = imageProcessor.downsampleImage(
-            "E:\\HE_TMA\\", "39387.svs", 
+            "E:\\HE_TMA\\", digitKey + ".svs",
             DefaultConfigValues.DOWNSAMPLE_FACTOR_X,
             DefaultConfigValues.DOWNSAMPLE_FACTOR_Y);
     imageProcessor.writeImage(dsImage, DefaultConfigValues.FILE_PATH_DOWNSAMPLE,
-            "39387-ds.png");
+            digitKey + "-ds.png");
   }
 
-  public static void findCores()
+  public static void findCores(String digitKey)
   {
     ImageProcessor imageProcessor = new ImageProcessor();
 
     BufferedImage edgeImage = imageProcessor.readImage(
-            DefaultConfigValues.FILE_PATH_EDGE, DefaultConfigValues.SAMPLE_IMAGE_EDGE);
+            DefaultConfigValues.FILE_PATH_EDGE, digitKey + "-edge.png");
 
     CoreExtractor coreExtractor = new CoreExtractor();
     coreExtractor.findCores(DefaultConfigValues.FILE_PATH_EDGE,
-            DefaultConfigValues.SAMPLE_IMAGE_EDGE, DefaultConfigValues.SAMPLE_LABEL);
+            digitKey + "-edge.png", digitKey + "-label.txt");
   }
 
   public static void createLabelIdentifyingImages()
