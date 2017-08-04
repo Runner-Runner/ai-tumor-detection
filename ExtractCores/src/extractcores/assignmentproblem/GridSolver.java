@@ -1,5 +1,6 @@
 package extractcores.assignmentproblem;
 
+import extractcores.CoreLabel;
 import extractcores.DefaultConfigValues;
 import extractcores.ImageProcessor;
 import static extractcores.ImageProcessor.appendFilename;
@@ -14,14 +15,17 @@ import java.util.List;
 
 public abstract class GridSolver extends AssignmentSolver
 {
+  protected AssignmentInformation assignmentInformation;
+
   public GridSolver(List<TissueCore> cores, LabelInformation labelInformation,
           String edgeFileName)
   {
     super(cores, labelInformation, edgeFileName);
+    assignmentInformation = new AssignmentInformation(labelInformation);
   }
 
   @Override
-  protected void createAssignmentInformation(int[] resultIndices)
+  protected void createAssignmentInformation()
   {
     ImageProcessor imageProcessor = new ImageProcessor();
     BufferedImage edgeImage = imageProcessor.readImage(
@@ -54,25 +58,31 @@ public abstract class GridSolver extends AssignmentSolver
             }, 0);
     g.setStroke(dashed);
 
-    for (int i = 0; i < cores.size(); i++)
+    for (int r = 0; r < labelInformation.getRowCount(); r++)
     {
-      TissueCore core = cores.get(i);
-
-      int gridIndex = resultIndices[i];
-      if (gridIndex == 0)
+      for (int c = 0; c < labelInformation.getColumnCount(); c++)
       {
-        continue;
-      }
-      int[] indices = get2dIndices(gridIndex);
-      int cellCenterX = (int) (minX + indices[1] * intervalWidth + radiusWidth);
-      int cellCenterY = (int) (minY + indices[0] * intervalHeight + radiusHeight);
+        Assignment assignment = assignmentInformation.getAssignment(r, c);
+        if (assignment != null)
+        {
+          Integer coreIndex = assignment.getCoreIndex();
+          if (coreIndex != null)
+          {
+            //TODO Test
+            TissueCore core = cores.get(coreIndex);
 
-      g.drawLine(core.getCenterX(), core.getCenterY(), cellCenterX, cellCenterY);
+            int cellCenterX = (int) (minX + c * intervalWidth + radiusWidth);
+            int cellCenterY = (int) (minY + r * intervalHeight + radiusHeight);
+
+            g.drawLine(core.getCenterX(), core.getCenterY(), cellCenterX, cellCenterY);
+          }
+        }
+      }
     }
 
     g.dispose();
     imageProcessor.writeImage(edgeImage,
-            DefaultConfigValues.FILE_PATH_INFORMATIVE, 
+            DefaultConfigValues.FILE_PATH_INFORMATIVE,
             appendFilename(edgeFileName, "assign", "png"));
   }
 
@@ -86,6 +96,15 @@ public abstract class GridSolver extends AssignmentSolver
             getColumnCount();
     int[][] inputMatrix = new int[coreCount][cellCount];
 
+//    int maxCount = coreCount > cellCount ? coreCount : cellCount;
+//    int[][] inputMatrix = new int[maxCount][maxCount];
+//    for(int i=0; i<maxCount; i++)
+//    {
+//      for(int j=0; j<maxCount; j++)
+//      {
+//        inputMatrix[i][j] = Integer.MAX_VALUE;
+//      }
+//    }
     for (int r = 0; r < coreCount; r++)
     {
       TissueCore core = cores.get(r);
@@ -101,6 +120,30 @@ public abstract class GridSolver extends AssignmentSolver
     return inputMatrix;
   }
 
+  @Override
+  public List<TissueCore> createLabeledCores()
+  {
+    for (int r = 0; r < labelInformation.getRowCount(); r++)
+    {
+      for (int c = 0; c < labelInformation.getColumnCount(); c++)
+      {
+        Assignment assignment = assignmentInformation.getAssignment(r, c);
+        if (assignment != null)
+        {
+          Integer coreIndex = assignment.getCoreIndex();
+          CoreLabel coreLabel = labelInformation.getCoreLabel(r, c);
+          if (coreLabel != null && assignment.getCoreIndex() != null)
+          {
+            cores.get(coreIndex).setLabel(coreLabel);
+            System.out.println("Label [" + r + "/" + c + "] = "
+                    + coreLabel.name() + "assigned to Core #" + coreIndex);
+          }
+        }
+      }
+    }
+    return cores;
+  }
+
   protected int[] get2dIndices(int index)
   {
     int rowIndex = index / labelInformation.getColumnCount();
@@ -111,4 +154,8 @@ public abstract class GridSolver extends AssignmentSolver
     };
   }
 
+  public AssignmentInformation getAssignmentInformation()
+  {
+    return assignmentInformation;
+  }
 }

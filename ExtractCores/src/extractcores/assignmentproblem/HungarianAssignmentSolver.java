@@ -49,8 +49,9 @@ public class HungarianAssignmentSolver extends GridSolver
     }
 
     //TODO handle redundant cores
-    
-    createAssignmentInformation(result);
+    //TODO check if hungarian algorithm does even improve on simple ... leave out if no time.
+
+    createAssignmentInformation();
 
     return cores;
   }

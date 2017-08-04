@@ -1,20 +1,18 @@
 package extractcores.assignmentproblem;
 
-import extractcores.CoreLabel;
 import extractcores.LabelInformation;
 import extractcores.TissueCore;
 import java.util.List;
 
 public class SimpleGridSolver extends GridSolver
 {
-  public SimpleGridSolver(List<TissueCore> cores, 
+  public SimpleGridSolver(List<TissueCore> cores,
           LabelInformation labelInformation, String edgeFileName)
   {
     super(cores, labelInformation, edgeFileName);
   }
 
-  @Override
-  public List<TissueCore> createLabeledCores()
+  public void assignCores()
   {
     calculateGridData();
     int[][] costMatrix = createCostMatrix();
@@ -36,17 +34,10 @@ public class SimpleGridSolver extends GridSolver
       resultIndices[i] = lowestValueIndex;
 
       int[] indices = get2dIndices(lowestValueIndex);
-      CoreLabel coreLabel = labelInformation.getCoreLabel(indices[0], indices[1]);
-      if (coreLabel != null)
-      {
-        cores.get(i).setLabel(coreLabel);
-        System.out.println("Distance cost: " + lowestValue + 
-                ". Assigned label '" + coreLabel.name() + "' to Core #" + i);
-      }
+
+      assignmentInformation.addAssignment(indices[0], indices[1], i, lowestValue);
     }
 
-    createAssignmentInformation(resultIndices);
-
-    return cores;
+    createAssignmentInformation();
   }
 }

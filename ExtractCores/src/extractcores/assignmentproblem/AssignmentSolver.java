@@ -67,7 +67,8 @@ public abstract class AssignmentSolver
     intervalHeight = Double.valueOf(maxY - minY) / rowCount;
   }
 
-  protected abstract void createAssignmentInformation(int[] resultIndices);
+  //TODO remove indices, separate "create assignment data" and "assign labels"
+  protected abstract void createAssignmentInformation();
 
   protected static double calculateCost(TissueCore tissueCore, double gridCellCenterX,
           double gridCellCenterY)

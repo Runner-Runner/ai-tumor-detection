@@ -4,7 +4,7 @@ import extractcores.assignmentproblem.HungarianAssignmentSolver;
 import static extractcores.DefaultConfigValues.EXTREME_CORE_RATIO_THRESHOLD;
 import static extractcores.DefaultConfigValues.LARGE_CORE_AREA_THRESHOLD;
 import static extractcores.DefaultConfigValues.MIN_OBJECT_AREA;
-import extractcores.assignmentproblem.SimpleGridSolver;
+import extractcores.assignmentproblem.GeometricKMeansSolver;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Rectangle;
@@ -164,13 +164,14 @@ public class CoreExtractor
   private List<TissueCore> assignLabels(LabelInformation labelInformation,
           List<TissueCore> cores, String edgeFileName)
   {
-//    HungarianAssignmentSolver assignmentSolver = new HungarianAssignmentSolver(
+    GeometricKMeansSolver solver = new GeometricKMeansSolver(
+            cores, labelInformation, edgeFileName);
+//    HungarianAssignmentSolver solver = new HungarianAssignmentSolver(
 //            cores, labelInformation, edgeFileName);
-//    return assignmentSolver.createLabeledCores();
-    
-    SimpleGridSolver solver = new SimpleGridSolver(cores, labelInformation, 
-            edgeFileName);
-    return solver.createLabeledCores();
+//    SimpleGridSolver solver = new SimpleGridSolver(cores, labelInformation, 
+//            edgeFileName);
+    solver.assignCores();
+    return null;
   }
 
   private void createCoreInformation(BufferedImage edgeImage,

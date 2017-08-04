@@ -13,9 +13,9 @@ public class Main
 
   public static void processImage(String path, String digitKey)
   {
-    createDownsampleImage(path, digitKey);
-    createEdgeImage(digitKey);
-    createLabelFile(digitKey);
+//    createDownsampleImage(path, digitKey);
+//    createEdgeImage(digitKey);
+//    createLabelFile(digitKey);
     findCores(digitKey);
   }
   
