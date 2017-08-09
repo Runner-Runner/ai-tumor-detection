@@ -3,7 +3,8 @@ package extractcores.assignmentproblem;
 import Jama.Matrix;
 import extractcores.TissueCore;
 import java.awt.Rectangle;
-import java.awt.geom.Rectangle2D;
+import java.util.ArrayList;
+import java.util.List;
 
 public class PolynomialModel extends GeometricModel
 {
@@ -87,7 +88,6 @@ public class PolynomialModel extends GeometricModel
   {
     if (assignedCores.isEmpty())
     {
-      //TODO That shouldn't really happen ...
       return;
     }
 
@@ -134,9 +134,9 @@ public class PolynomialModel extends GeometricModel
     Matrix rhsMatrix = new Matrix(rightside);
 
     Matrix solution = lhsMatrix.solve(rhsMatrix);
-    cx2 = solution.get(0, 0);
+    c = solution.get(0, 0);
     cx = solution.get(1, 0);
-    c = solution.get(2, 0);
+    cx2 = solution.get(2, 0);
   }
 
   @Override
@@ -154,5 +154,23 @@ public class PolynomialModel extends GeometricModel
     cx2 = coefficients[0];
     cx = coefficients[1];
     c = coefficients[2];
+  }
+
+  @Override
+  public List<TissueCore> removeOutliers()
+  {
+    List<TissueCore> outliers = new ArrayList<>();
+    updateModel();
+    
+    double avgDistance = 0;
+    double[] distances = new double[assignedCores.size()];
+    for(int i=0; i<assignedCores.size(); i++)
+    {
+      TissueCore core = assignedCores.get(i);
+      avgDistance += distances[i] = getDistance(core);
+    }
+    avgDistance /= assignedCores.size();
+    
+    return outliers;
   }
 }
