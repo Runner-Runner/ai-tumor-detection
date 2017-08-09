@@ -8,7 +8,6 @@ import extractcores.TissueCore;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
-import java.awt.geom.GeneralPath;
 import java.awt.image.BufferedImage;
 import java.util.List;
 
@@ -163,25 +162,16 @@ public class GeometricKMeansSolver extends AssignmentSolver
       if (coefficients.length == 3)
       {
         //TODO draw polynomial curve with efficient function if possible
-//        int[] curvePointsX = new int[edgeImage.getWidth()];
-//        int[] curvePointsY = new int[edgeImage.getWidth()];
-//        for (int x = 0; x < edgeImage.getWidth()-1; x++)
-//        {
-//          int y = (int) (coefficients[2] * Math.pow(x, 2) + coefficients[1] * x
-//                  + coefficients[0]);
-//          curvePointsX[x] = x;
-//          curvePointsY[x] = y;
-//        }
-//        g.drawPolyline(curvePointsX, curvePointsY, curvePointsX.length);
-
-        int lastY = (int) coefficients[0];
-        for (int x = 1; x < edgeImage.getWidth(); x++)
+        int[] curvePointsX = new int[edgeImage.getWidth()];
+        int[] curvePointsY = new int[edgeImage.getWidth()];
+        for (int x = 0; x < edgeImage.getWidth(); x++)
         {
           int y = (int) (coefficients[2] * Math.pow(x, 2) + coefficients[1] * x
                   + coefficients[0]);
-          g.drawLine(x-1, lastY, x, y);
-          lastY = y;
+          curvePointsX[x] = x;
+          curvePointsY[x] = y;
         }
+        g.drawPolyline(curvePointsX, curvePointsY, curvePointsX.length);
 
         for (int j = 0; j < geometricModel[i].getCoreCount(); j++)
         {
