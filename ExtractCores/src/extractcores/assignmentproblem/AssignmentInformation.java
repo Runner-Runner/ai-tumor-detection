@@ -1,25 +1,21 @@
 package extractcores.assignmentproblem;
 
-import extractcores.LabelInformation;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 public class AssignmentInformation
 {
-  private Integer[][] coreIndices;
-  private Integer[][] coreDistances;
+  //TODO maybe store as list and as 2dim array (size 100x100) for access with better performance.
+  
   private List<Assignment> coreAssignments;
 
-  public AssignmentInformation(LabelInformation labelInformation)
+  public AssignmentInformation()
   {
     coreAssignments = new ArrayList<>();
-
-//    coreIndices = new Integer[labelInformation.getRowCount()][labelInformation.getColumnCount()];
-//    coreDistances = new Integer[labelInformation.getRowCount()][labelInformation.getColumnCount()];
   }
 
-  public void addAssignment(int row, int column, int coreIndex, int distance)
+  public void addAssignment(int row, int column, int coreIndex, Integer distance)
   {
     coreAssignments.add(new Assignment(row, column, coreIndex, distance));
     Collections.sort(coreAssignments);

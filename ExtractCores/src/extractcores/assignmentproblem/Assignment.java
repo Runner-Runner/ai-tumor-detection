@@ -36,7 +36,7 @@ public class Assignment implements Comparable<Assignment>
     return coreIndex;
   }
 
-  public int getDistanceCost()
+  public Integer getDistanceCost()
   {
     return distanceCost;
   }

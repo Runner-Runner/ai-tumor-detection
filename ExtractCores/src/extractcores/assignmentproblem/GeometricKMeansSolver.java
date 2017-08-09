@@ -5,8 +5,10 @@ import extractcores.ImageProcessor;
 import static extractcores.ImageProcessor.appendFilename;
 import extractcores.LabelInformation;
 import extractcores.TissueCore;
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.geom.GeneralPath;
 import java.awt.image.BufferedImage;
 import java.util.List;
 
@@ -18,9 +20,12 @@ public class GeometricKMeansSolver extends AssignmentSolver
    */
   private int maxCoreCount;
   private GeometricModel[] geometricModel;
+  private double simpleIntervalWidth;
+  private double simpleIntervalHeight;
 
   private static int infoImageCount = 0;
   private static final int INITIAL_MODEL_POINTS = 3;
+  private static final double LOW_ANGLE_INIT_FACTOR = 0.000001;
 
   public GeometricKMeansSolver(List<TissueCore> cores, LabelInformation labelInformation, String edgeFileName)
   {
@@ -41,15 +46,19 @@ public class GeometricKMeansSolver extends AssignmentSolver
 
   public void assignCores()
   {
+    System.out.println("Simple Grid Solver:");
     SimpleGridSolver simpleSolver = new SimpleGridSolver(cores, labelInformation, edgeFileName);
     simpleSolver.assignCores();
-    AssignmentInformation assignmentInformation = simpleSolver.
+    AssignmentInformation simpleAssignmentInformation = simpleSolver.
             getAssignmentInformation();
+    simpleIntervalWidth = simpleSolver.getIntervalWidth();
+    simpleIntervalHeight = simpleSolver.getIntervalHeight();
+    System.out.println("Done.");
 
     System.out.println("Geometric K-Means Solver:");
     System.out.println("Initialize Models.");
-    
-    initialize(assignmentInformation);
+
+    initialize(simpleAssignmentInformation);
 
     createAssignmentInformation();
 
@@ -58,11 +67,11 @@ public class GeometricKMeansSolver extends AssignmentSolver
     {
       reassignData();
       updateModels();
-      System.out.println("Reassign data. Update models. Iteration #" + (i+1) + ".");
+      System.out.println("Reassign data. Update models. Iteration #" + (i + 1) + ".");
 
       createAssignmentInformation();
     }
-
+    System.out.println("Done.");
   }
 
   private void initialize(AssignmentInformation simplestAssignmentInformation)
@@ -72,12 +81,18 @@ public class GeometricKMeansSolver extends AssignmentSolver
     {
       List<Assignment> lowestInRow = simplestAssignmentInformation.
               getLowestInRow(i, INITIAL_MODEL_POINTS);
+      double yAvg = 0;
       for (Assignment assignment : lowestInRow)
       {
-        geometricModel[i].addCore(cores.get(assignment.getCoreIndex()));
+        yAvg += cores.get(assignment.getCoreIndex()).getCenterY();
       }
+      yAvg /= lowestInRow.size();
+
+      geometricModel[i].setCoefficients(new double[]
+      {
+        LOW_ANGLE_INIT_FACTOR, LOW_ANGLE_INIT_FACTOR, yAvg
+      });
     }
-    updateModels();
   }
 
   private void updateModels()
@@ -90,6 +105,7 @@ public class GeometricKMeansSolver extends AssignmentSolver
 
   private void reassignData()
   {
+    //TODO introduce penalty cost for cores to close to each other
     for (int i = 0; i < modelCount; i++)
     {
       geometricModel[i].clearCores();
@@ -103,16 +119,22 @@ public class GeometricKMeansSolver extends AssignmentSolver
       int lowestModelIndex = -1;
       for (int j = 0; j < modelCount; j++)
       {
-        double distance = geometricModel[j].getDistance(core);
-        if (geometricModel[j].getCoreCount() <= maxCoreCount && distance < lowestDistance)
+        if (geometricModel[j].getCoreCount() <= maxCoreCount)
         {
-          lowestDistance = distance;
-          lowestModelIndex = j;
+          //Distance to curve
+          double cost = geometricModel[j].getDistance(core);
+
+          //Closeness penalty to other cores on curve
+          cost += geometricModel[j].getClosenessCost(core, simpleIntervalWidth,
+                  simpleIntervalHeight);
+
+          //TODO is that a reasonable metric, how to test-tweak?
+          if (cost < lowestDistance)
+          {
+            lowestDistance = cost;
+            lowestModelIndex = j;
+          }
         }
-      }
-      if (lowestModelIndex == -1)
-      {
-        int asdasd = 3;
       }
       geometricModel[lowestModelIndex].addCore(core);
     }
@@ -133,6 +155,7 @@ public class GeometricKMeansSolver extends AssignmentSolver
             edgeFileName);
     Graphics2D g = (Graphics2D) edgeImage.getGraphics();
     g.setColor(Color.GREEN);
+    g.setStroke(new BasicStroke(2));
     
     for (int i = 0; i < modelCount; i++)
     {
@@ -140,16 +163,25 @@ public class GeometricKMeansSolver extends AssignmentSolver
       if (coefficients.length == 3)
       {
         //TODO draw polynomial curve with efficient function if possible
-        int[] curvePointsX = new int[edgeImage.getWidth()];
-        int[] curvePointsY = new int[edgeImage.getWidth()];
-        for (int x = 0; x < edgeImage.getWidth(); x++)
+//        int[] curvePointsX = new int[edgeImage.getWidth()];
+//        int[] curvePointsY = new int[edgeImage.getWidth()];
+//        for (int x = 0; x < edgeImage.getWidth()-1; x++)
+//        {
+//          int y = (int) (coefficients[2] * Math.pow(x, 2) + coefficients[1] * x
+//                  + coefficients[0]);
+//          curvePointsX[x] = x;
+//          curvePointsY[x] = y;
+//        }
+//        g.drawPolyline(curvePointsX, curvePointsY, curvePointsX.length);
+
+        int lastY = (int) coefficients[0];
+        for (int x = 1; x < edgeImage.getWidth(); x++)
         {
           int y = (int) (coefficients[2] * Math.pow(x, 2) + coefficients[1] * x
                   + coefficients[0]);
-          curvePointsX[x] = x;
-          curvePointsY[x] = y;
+          g.drawLine(x-1, lastY, x, y);
+          lastY = y;
         }
-        g.drawPolyline(curvePointsX, curvePointsY, curvePointsX.length);
 
         for (int j = 0; j < geometricModel[i].getCoreCount(); j++)
         {

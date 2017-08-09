@@ -1,13 +1,14 @@
 package extractcores;
 
-import extractcores.assignmentproblem.HungarianAssignmentSolver;
 import static extractcores.DefaultConfigValues.EXTREME_CORE_RATIO_THRESHOLD;
 import static extractcores.DefaultConfigValues.LARGE_CORE_AREA_THRESHOLD;
 import static extractcores.DefaultConfigValues.MIN_OBJECT_AREA;
 import extractcores.assignmentproblem.GeometricKMeansSolver;
 import java.awt.Color;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Rectangle;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -143,8 +144,8 @@ public class CoreExtractor
       Rectangle boundingBox = unionCore.getBoundingBox();
       int boundingBoxArea = boundingBox.width * boundingBox.height;
       double sideRatio = Double.valueOf(boundingBox.height) / boundingBox.width;
-      if (boundingBoxArea > LARGE_CORE_AREA_THRESHOLD && 
-              sideRatio > EXTREME_CORE_RATIO_THRESHOLD)
+      if (boundingBoxArea > LARGE_CORE_AREA_THRESHOLD
+              && sideRatio > EXTREME_CORE_RATIO_THRESHOLD)
       {
         continue;
       }
@@ -184,19 +185,18 @@ public class CoreExtractor
     Graphics g = foundObjectsImage.getGraphics();
     g.drawImage(edgeImage, 0, 0, null);
 
-    g.setColor(Color.red);
-    for (TissueCore core : allCores)
-    {
-      if (!mergedCores.contains(core))
-      {
-        drawBoundingBox(g, core);
-      }
-    }
-
+//    g.setColor(Color.red);
+//    for (TissueCore core : allCores)
+//    {
+//      if (!mergedCores.contains(core))
+//      {
+//        drawBoundingBox(g, core);
+//      }
+//    }
     g.setColor(Color.green);
-    for (TissueCore core : mergedCores)
+    for (int i = 0; i < mergedCores.size(); i++)
     {
-      drawBoundingBox(g, core);
+      drawBoundingBox(g, mergedCores.get(i), i);
     }
 
     g.dispose();
@@ -214,13 +214,25 @@ public class CoreExtractor
     System.out.println(Arrays.toString(boundingSideRatios.toArray()));
   }
 
-  private void drawBoundingBox(Graphics g, TissueCore core)
+  private void drawBoundingBox(Graphics g, TissueCore core, int index)
   {
     Rectangle boundingBox = core.getBoundingBox();
     g.drawRect(boundingBox.x, boundingBox.y,
             boundingBox.width, boundingBox.height);
-//    g.drawString(String.valueOf(boundingBox.width * boundingBox.height),
-//            boundingBox.x + boundingBox.width + 5,
-//            boundingBox.y + boundingBox.height);
+
+    String indexString = String.valueOf(index);
+    int x = boundingBox.x + boundingBox.width - 20;
+    int y = boundingBox.y + boundingBox.height - 20;
+    
+    FontMetrics fm = g.getFontMetrics();
+    Rectangle2D rect = fm.getStringBounds(indexString, g);
+
+    g.setColor(Color.DARK_GRAY);
+    g.fillRect(x,
+            y - fm.getAscent(),
+            (int) rect.getWidth(),
+            (int) rect.getHeight());
+    g.setColor(Color.GREEN);
+    g.drawString(indexString, x, y);
   }
 }

@@ -265,6 +265,12 @@ public class LabelProcessor
     return coreLabelArray;
   }
 
+  public LabelInformation readTxtLabelFile(int digitKey)
+  {
+    return readTxtLabelFile(DefaultConfigValues.FILE_PATH_LABEL, 
+            digitKey + "-label.txt");
+  }
+  
   public LabelInformation readTxtLabelFile(String pathName, String labelName)
   {
     try

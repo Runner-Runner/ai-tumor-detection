@@ -1,6 +1,5 @@
 package extractcores.assignmentproblem;
 
-import Jama.LUDecomposition;
 import Jama.Matrix;
 import extractcores.TissueCore;
 
@@ -33,14 +32,40 @@ public class PolynomialModel extends GeometricModel
   }
 
   @Override
-  public void updateModel()
+  public double getClosenessCost(TissueCore core, double intervalWidth, 
+          double intervalHeight)
   {
     if(assignedCores.isEmpty())
+    {
+      return 0.0;
+    }
+    //Checks only horizontal distance for now.
+    double closestCoreDistance = Double.MAX_VALUE;
+    for (TissueCore otherCore : assignedCores)
+    {
+      double distance = Math.abs(core.getCenterX() - otherCore.getCenterX());
+      if (distance < closestCoreDistance)
+      {
+        closestCoreDistance = distance;
+      }
+    }
+
+    double closeness = Math.max(intervalWidth - closestCoreDistance, 0);
+    double closenessFactor = closeness / intervalWidth;
+    //TODO introduce steep function, especially to the full 100%!
+    double closenessCost = closenessFactor * intervalHeight * 2;//
+    return closenessCost; 
+  }
+
+  @Override
+  public void updateModel()
+  {
+    if (assignedCores.isEmpty())
     {
       //TODO That shouldn't really happen ...
       return;
     }
-    
+
     double[][] fittingMatrix = new double[3][3];
     double[][] rightside = new double[3][1];
 
@@ -83,19 +108,10 @@ public class PolynomialModel extends GeometricModel
     Matrix lhsMatrix = new Matrix(fittingMatrix);
     Matrix rhsMatrix = new Matrix(rightside);
 
-    //TODO Test lib function. Where to find solved coefficients
-    if (!(new LUDecomposition(lhsMatrix)).isNonsingular())
-    {
-      int asdasd = 3;
-    }
-    else
-    {
-      int asd= 3;
-    }
     Matrix solution = lhsMatrix.solve(rhsMatrix);
-    cx2 = solution.get(0,0);
-    cx = solution.get(1,0);
-    c = solution.get(2,0);
+    cx2 = solution.get(0, 0);
+    cx = solution.get(1, 0);
+    c = solution.get(2, 0);
   }
 
   @Override
@@ -107,4 +123,11 @@ public class PolynomialModel extends GeometricModel
     };
   }
 
+  @Override
+  public void setCoefficients(double[] coefficients)
+  {
+    c = coefficients[0];
+    cx = coefficients[1];
+    cx2 = coefficients[2];
+  }
 }
