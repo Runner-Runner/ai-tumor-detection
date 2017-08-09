@@ -161,13 +161,12 @@ public class GeometricKMeansSolver extends AssignmentSolver
       double[] coefficients = geometricModel[i].getCoefficients();
       if (coefficients.length == 3)
       {
-        //TODO draw polynomial curve with efficient function if possible
         int[] curvePointsX = new int[edgeImage.getWidth()];
         int[] curvePointsY = new int[edgeImage.getWidth()];
         for (int x = 0; x < edgeImage.getWidth(); x++)
         {
-          int y = (int) (coefficients[2] * Math.pow(x, 2) + coefficients[1] * x
-                  + coefficients[0]);
+          int y = (int) (coefficients[0] * Math.pow(x, 2) + coefficients[1] * x
+                  + coefficients[2]);
           curvePointsX[x] = x;
           curvePointsY[x] = y;
         }
@@ -178,8 +177,8 @@ public class GeometricKMeansSolver extends AssignmentSolver
           TissueCore core = geometricModel[i].getCore(j);
           int x = core.getCenterX();
           int coreY = core.getCenterY();
-          int curveY = (int) (coefficients[2] * Math.pow(x, 2) + coefficients[1] * x
-                  + coefficients[0]);
+          int curveY = (int) (coefficients[0] * Math.pow(x, 2) + coefficients[1] * x
+                  + coefficients[2]);
           g.drawLine(x, coreY, x, curveY);
         }
       }

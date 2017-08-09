@@ -8,6 +8,7 @@ public class TissueCore
   private Rectangle boundingBox;
   private int centerX;
   private int centerY;
+  private int id = -1;
   private CoreLabel label = CoreLabel.UNDEFINED;
 
   public TissueCore(int x, int y, int width, int height)
@@ -40,6 +41,16 @@ public class TissueCore
   public void setLabel(CoreLabel label)
   {
     this.label = label;
+  }
+
+  public int getId()
+  {
+    return id;
+  }
+
+  public void setId(int id)
+  {
+    this.id = id;
   }
   
   @Override

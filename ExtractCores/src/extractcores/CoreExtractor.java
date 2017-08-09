@@ -3,6 +3,7 @@ package extractcores;
 import static extractcores.DefaultConfigValues.EXTREME_CORE_RATIO_THRESHOLD;
 import static extractcores.DefaultConfigValues.LARGE_CORE_AREA_THRESHOLD;
 import static extractcores.DefaultConfigValues.MIN_OBJECT_AREA;
+import extractcores.assignmentproblem.GeometricBatchSolver;
 import extractcores.assignmentproblem.GeometricKMeansSolver;
 import java.awt.Color;
 import java.awt.FontMetrics;
@@ -70,6 +71,11 @@ public class CoreExtractor
 
     List<TissueCore> mergedCores = mergeIntersectingRectangles(allCores);
 
+    for(int i=0; i<mergedCores.size(); i++)
+    {
+      mergedCores.get(i).setId(i);
+    }
+    
     int coreCount = labelInformation.getCoreCount();
     int foundCoreCount = mergedCores.size();
     int missingCoreCount = coreCount - foundCoreCount;
@@ -165,8 +171,10 @@ public class CoreExtractor
   private List<TissueCore> assignLabels(LabelInformation labelInformation,
           List<TissueCore> cores, String edgeFileName)
   {
-    GeometricKMeansSolver solver = new GeometricKMeansSolver(
+    GeometricBatchSolver solver = new GeometricBatchSolver(
             cores, labelInformation, edgeFileName);
+//    GeometricKMeansSolver solver = new GeometricKMeansSolver(
+//            cores, labelInformation, edgeFileName);
 //    HungarianAssignmentSolver solver = new HungarianAssignmentSolver(
 //            cores, labelInformation, edgeFileName);
 //    SimpleGridSolver solver = new SimpleGridSolver(cores, labelInformation, 

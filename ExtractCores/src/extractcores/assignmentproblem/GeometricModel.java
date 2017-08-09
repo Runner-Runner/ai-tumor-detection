@@ -17,6 +17,11 @@ public abstract class GeometricModel
   {
     assignedCores.add(core);
   }
+  
+  public boolean removeCore(TissueCore core)
+  {
+    return assignedCores.remove(core);
+  }
 
   public void clearCores()
   {
@@ -33,6 +38,11 @@ public abstract class GeometricModel
     return assignedCores.get(i);
   }
 
+  public List<TissueCore> getAssignedCores()
+  {
+    return assignedCores;
+  }
+  
   public abstract double[] getCoefficients();
 
   public abstract void setCoefficients(double[] coefficients);
@@ -42,6 +52,8 @@ public abstract class GeometricModel
   public abstract double getClosenessCost(TissueCore core, double intervalWidth,
           double intervalHeight);
 
+  public abstract TissueCore getXOverlappingCore(TissueCore core);
+  
   public abstract void updateModel();
 
 }

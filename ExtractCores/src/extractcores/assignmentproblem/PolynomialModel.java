@@ -2,6 +2,8 @@ package extractcores.assignmentproblem;
 
 import Jama.Matrix;
 import extractcores.TissueCore;
+import java.awt.Rectangle;
+import java.awt.geom.Rectangle2D;
 
 public class PolynomialModel extends GeometricModel
 {
@@ -28,14 +30,15 @@ public class PolynomialModel extends GeometricModel
     double curveY = cx2 * x * x + cx * x + c;
 
     double distance = Math.abs(coreY - curveY);
-    return distance;
+    //Square distances to favor distributed distances.
+    return Math.pow(distance, 2);
   }
 
   @Override
-  public double getClosenessCost(TissueCore core, double intervalWidth, 
+  public double getClosenessCost(TissueCore core, double intervalWidth,
           double intervalHeight)
   {
-    if(assignedCores.isEmpty())
+    if (assignedCores.isEmpty())
     {
       return 0.0;
     }
@@ -54,7 +57,29 @@ public class PolynomialModel extends GeometricModel
     double closenessFactor = closeness / intervalWidth;
     //TODO introduce steep function, especially to the full 100%!
     double closenessCost = closenessFactor * intervalHeight * 2;//
-    return closenessCost; 
+    return closenessCost;
+  }
+
+  @Override
+  public TissueCore getXOverlappingCore(TissueCore core)
+  {
+    if (assignedCores.isEmpty())
+    {
+      return null;
+    }
+    for (TissueCore otherCore : assignedCores)
+    {
+      Rectangle boundingBox = core.getBoundingBox();
+      Rectangle otherBoundingBox = otherCore.getBoundingBox();
+      boolean noOverlap = boundingBox.x > otherBoundingBox.x + otherBoundingBox.width 
+              || boundingBox.x + boundingBox.width < otherBoundingBox.x;
+
+      if(!noOverlap)
+      {
+        return otherCore;
+      }
+    }
+    return null;
   }
 
   @Override
@@ -126,8 +151,8 @@ public class PolynomialModel extends GeometricModel
   @Override
   public void setCoefficients(double[] coefficients)
   {
-    c = coefficients[0];
+    cx2 = coefficients[0];
     cx = coefficients[1];
-    cx2 = coefficients[2];
+    c = coefficients[2];
   }
 }
