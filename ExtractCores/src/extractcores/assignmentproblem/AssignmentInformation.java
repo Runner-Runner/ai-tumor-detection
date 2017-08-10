@@ -1,5 +1,6 @@
 package extractcores.assignmentproblem;
 
+import extractcores.TissueCore;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -15,9 +16,9 @@ public class AssignmentInformation
     coreAssignments = new ArrayList<>();
   }
 
-  public void addAssignment(int row, int column, int coreIndex, Integer distance)
+  public void addAssignment(int row, int column, TissueCore core, Integer distance)
   {
-    coreAssignments.add(new Assignment(row, column, coreIndex, distance));
+    coreAssignments.add(new Assignment(row, column, core, distance));
     Collections.sort(coreAssignments);
   }
 

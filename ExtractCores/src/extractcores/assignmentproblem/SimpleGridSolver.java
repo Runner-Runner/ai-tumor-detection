@@ -35,7 +35,7 @@ public class SimpleGridSolver extends GridSolver
 
       int[] indices = get2dIndices(lowestValueIndex);
 
-      assignmentInformation.addAssignment(indices[0], indices[1], i, lowestValue);
+      assignmentInformation.addAssignment(indices[0], indices[1], cores.get(i), lowestValue);
     }
 
     createAssignmentInformation();

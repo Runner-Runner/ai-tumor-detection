@@ -79,17 +79,12 @@ public abstract class GridSolver extends AssignmentSolver
         Assignment assignment = assignmentInformation.getAssignment(r, c);
         if (assignment != null)
         {
-          Integer coreIndex = assignment.getCoreIndex();
-          if (coreIndex != null)
-          {
-            //TODO Test
-            TissueCore core = cores.get(coreIndex);
+          TissueCore core = assignment.getCore();
 
-            int cellCenterX = (int) (minX + c * intervalWidth + radiusWidth);
-            int cellCenterY = (int) (minY + r * intervalHeight + radiusHeight);
+          int cellCenterX = (int) (minX + c * intervalWidth + radiusWidth);
+          int cellCenterY = (int) (minY + r * intervalHeight + radiusHeight);
 
-            g.drawLine(core.getCenterX(), core.getCenterY(), cellCenterX, cellCenterY);
-          }
+          g.drawLine(core.getCenterX(), core.getCenterY(), cellCenterX, cellCenterY);
         }
       }
     }
@@ -144,13 +139,13 @@ public abstract class GridSolver extends AssignmentSolver
         Assignment assignment = assignmentInformation.getAssignment(r, c);
         if (assignment != null)
         {
-          Integer coreIndex = assignment.getCoreIndex();
+          TissueCore core = assignment.getCore();
           CoreLabel coreLabel = labelInformation.getCoreLabel(r, c);
-          if (coreLabel != null && assignment.getCoreIndex() != null)
+          if (coreLabel != null)
           {
-            cores.get(coreIndex).setLabel(coreLabel);
+            core.setLabel(coreLabel);
             System.out.println("Label [" + r + "/" + c + "] = "
-                    + coreLabel.name() + "assigned to Core #" + coreIndex);
+                    + coreLabel.name() + "assigned to Core #" + core.getId());
           }
         }
       }
@@ -205,14 +200,34 @@ public abstract class GridSolver extends AssignmentSolver
   {
     return assignmentInformation;
   }
-  
+
   public double getIntervalWidth()
   {
     return intervalWidth;
   }
-  
+
   public double getIntervalHeight()
   {
     return intervalHeight;
+  }
+
+  public int getMinX()
+  {
+    return minX;
+  }
+
+  public int getMaxX()
+  {
+    return maxX;
+  }
+
+  public int getMinY()
+  {
+    return minY;
+  }
+
+  public int getMaxY()
+  {
+    return maxY;
   }
 }

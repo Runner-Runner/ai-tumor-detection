@@ -8,7 +8,7 @@ public class TissueCore
   private Rectangle boundingBox;
   private int centerX;
   private int centerY;
-  private int id = -1;
+  private int[] ids;
   private CoreLabel label = CoreLabel.UNDEFINED;
 
   public TissueCore(int x, int y, int width, int height)
@@ -45,12 +45,17 @@ public class TissueCore
 
   public int getId()
   {
-    return id;
+    return ids[0];
+  }
+  
+  public int[] getIds()
+  {
+    return ids;
   }
 
-  public void setId(int id)
+  public void setIds(int... ids)
   {
-    this.id = id;
+    this.ids = ids;
   }
   
   @Override
@@ -119,5 +124,12 @@ public class TissueCore
     }
 
     return sideDistance <= DefaultConfigValues.MIN_CORE_SIDE_DISTANCE;
+  }
+
+  public int getDistance(TissueCore otherCore)
+  {
+    int xDiff = Math.abs(centerX - otherCore.getCenterX());
+    int yDiff = Math.abs(centerY - otherCore.getCenterY());
+    return (int)Math.sqrt(xDiff * xDiff + yDiff * yDiff);
   }
 }

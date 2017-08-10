@@ -3,6 +3,7 @@ package label;
 import static extractcores.DefaultConfigValues.FILE_PATH_LABEL_SOLUTION;
 import extractcores.LabelInformation;
 import extractcores.LabelProcessor;
+import extractcores.TissueCore;
 import extractcores.assignmentproblem.AssignmentInformation;
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -39,22 +40,21 @@ public class ManualSolutionReader
           String cellValue = splitLine[c];
           if(cellValue.contains("+"))
           {
-            //TODO separate
-            String[] splitCell = cellValue.split("+");
-            if(splitCell.length != 2)
+            String[] splitCell = cellValue.split("\\+");
+            int[] coreIds = new int[splitCell.length];
+            for(int i=0; i<coreIds.length; i++)
             {
-              System.out.println("Wrong format: '" + cellValue + "'");
+              coreIds[i] = Integer.parseInt(splitCell[i]);
             }
-            else
-            {
-              //TODO
-              //splitCell[0]
-            }
+            TissueCore dummyCore = new TissueCore(-1, -1, -1, -1);
+            dummyCore.setIds(coreIds);
+            assignmentInformation.addAssignment(rowCount, c, dummyCore, null);
           }
           else if(!cellValue.contains("g"))
           {
-            assignmentInformation.addAssignment(rowCount, c, 
-                    Integer.parseInt(cellValue), null);
+            TissueCore dummyCore = new TissueCore(-1, -1, -1, -1);
+            dummyCore.setIds(Integer.parseInt(cellValue));
+            assignmentInformation.addAssignment(rowCount, c, dummyCore, null);
           }
         }
         

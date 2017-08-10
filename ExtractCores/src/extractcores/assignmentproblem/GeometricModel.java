@@ -56,4 +56,7 @@ public abstract class GeometricModel
   
   public abstract void updateModel();
 
+  public abstract List<TissueCore> removeOutliers();
+
+  public abstract int getY(int x);
 }

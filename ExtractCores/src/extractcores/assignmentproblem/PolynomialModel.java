@@ -12,6 +12,8 @@ public class PolynomialModel extends GeometricModel
   private double cx;
   private double c;
 
+  private static final int DEVIATION_FACTOR = 10;
+
   public PolynomialModel()
   {
     super();
@@ -72,10 +74,10 @@ public class PolynomialModel extends GeometricModel
     {
       Rectangle boundingBox = core.getBoundingBox();
       Rectangle otherBoundingBox = otherCore.getBoundingBox();
-      boolean noOverlap = boundingBox.x > otherBoundingBox.x + otherBoundingBox.width 
+      boolean noOverlap = boundingBox.x > otherBoundingBox.x + otherBoundingBox.width
               || boundingBox.x + boundingBox.width < otherBoundingBox.x;
 
-      if(!noOverlap)
+      if (!noOverlap)
       {
         return otherCore;
       }
@@ -160,17 +162,30 @@ public class PolynomialModel extends GeometricModel
   public List<TissueCore> removeOutliers()
   {
     List<TissueCore> outliers = new ArrayList<>();
-    updateModel();
-    
+
     double avgDistance = 0;
     double[] distances = new double[assignedCores.size()];
-    for(int i=0; i<assignedCores.size(); i++)
+    for (int i = 0; i < assignedCores.size(); i++)
     {
       TissueCore core = assignedCores.get(i);
       avgDistance += distances[i] = getDistance(core);
     }
     avgDistance /= assignedCores.size();
-    
+
+    for (int i = 0; i < distances.length; i++)
+    {
+      if (distances[i] > DEVIATION_FACTOR * avgDistance)
+      {
+        outliers.add(assignedCores.remove(i));
+      }
+    }
     return outliers;
+  }
+
+  @Override
+  public int getY(int x)
+  {
+    int y = (int) (cx2 * Math.pow(x, 2) + cx * x + c);
+    return y;
   }
 }

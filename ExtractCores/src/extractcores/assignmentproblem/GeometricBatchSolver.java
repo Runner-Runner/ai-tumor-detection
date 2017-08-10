@@ -22,9 +22,8 @@ public class GeometricBatchSolver extends AssignmentSolver
    * Upper limit for assignments, higher than max to account for redundance
    */
   private int columnCount;
-  private GeometricModel[] geometricModel;
-  private double simpleIntervalWidth;
-  private double simpleIntervalHeight;
+  private GeometricModel[] geometricModels;
+  private SimpleGridSolver simpleSolver;
 
   private static int infoImageCount = 0;
   private static final int INITIAL_MODEL_POINTS = 3;
@@ -35,11 +34,11 @@ public class GeometricBatchSolver extends AssignmentSolver
     super(cores, labelInformation, edgeFileName);
     columnCount = labelInformation.getColumnCount();
     modelCount = labelInformation.getRowCount();
-    geometricModel = new GeometricModel[modelCount];
+    geometricModels = new GeometricModel[modelCount];
     //TODO does that make sense here?
     for (int i = 0; i < modelCount; i++)
     {
-      geometricModel[i] = generateGeometricModel();
+      geometricModels[i] = generateGeometricModel();
     }
   }
 
@@ -52,12 +51,10 @@ public class GeometricBatchSolver extends AssignmentSolver
   public void assignCores()
   {
     System.out.println("Simple Grid Solver:");
-    SimpleGridSolver simpleSolver = new SimpleGridSolver(cores, labelInformation, edgeFileName);
+    simpleSolver = new SimpleGridSolver(cores, labelInformation, edgeFileName);
     simpleSolver.assignCores();
     AssignmentInformation simpleAssignmentInformation = simpleSolver.
             getAssignmentInformation();
-    simpleIntervalWidth = simpleSolver.getIntervalWidth();
-    simpleIntervalHeight = simpleSolver.getIntervalHeight();
     System.out.println("Done.");
 
     System.out.println("Geometric Batch Solver:");
@@ -68,34 +65,60 @@ public class GeometricBatchSolver extends AssignmentSolver
     coreComparator.setComparisonType(CoreComparator.CompareType.VERTICAL_BOTTOM);
     Collections.sort(cores, coreComparator);
 
-    int batchSize = 3 * columnCount;
-    int coreCount = cores.size();
+    List<TissueCore> copyCores = new ArrayList<>();
+    copyCores.addAll(cores);
+    List<TissueCore> batchCores = new ArrayList<>();
 
-//    for (int rowIndex = 0; rowIndex < modelCount - 1; rowIndex++)
-    for (int rowIndex = 0; rowIndex < 2; rowIndex++)
+    for (int rowIndex = 0; rowIndex < modelCount - 1; rowIndex++)
+//    for (int rowIndex = 0; rowIndex < 4; rowIndex++)
     {
       System.out.println("Processing batch: row " + (rowIndex + 1) + " and "
               + (rowIndex + 2) + ".");
 
-      int lowerBound = Math.max(rowIndex * columnCount - columnCount / 2, 0);
-      int upperBound = Math.min((rowIndex + 2) * columnCount + columnCount / 2, coreCount - 1);
-
-      List<TissueCore> batchCores = new ArrayList<>();
-      for (int i = lowerBound; i <= upperBound; i++)
+      double yBound = Double.MAX_VALUE;
+      PolynomialModel boundModel = new PolynomialModel();
+      if (rowIndex == 0)
       {
-        batchCores.add(cores.get(i));
+        yBound = simpleSolver.getMinY() + 4 * simpleSolver.getIntervalHeight();
       }
-      
-      //Remove all assigned cores from model 1.
-      if(rowIndex > 0)
+      else
       {
-        batchCores.removeAll(geometricModel[rowIndex-1].getAssignedCores());
+        GeometricModel model = geometricModels[rowIndex - 1];
+        double[] coefficients = model.getCoefficients();
+        coefficients[2] += 3 * simpleSolver.getIntervalHeight();
+        boundModel.setCoefficients(coefficients);
+      }
+
+      for (int i = 0; i<copyCores.size(); i++)
+      {
+        TissueCore core = copyCores.get(i);
+        ///
+        if(core.getId() == 205)
+        {
+          int a = 3;
+        }
+        ///
+        if (rowIndex != 0)
+        {
+          yBound = boundModel.getY(core.getCenterX());
+        }
+        if (core.getBoundingBox().y + core.getBoundingBox().height < yBound)
+        {
+          batchCores.add(core);
+        }
+      }
+      copyCores.removeAll(batchCores);
+
+      if (rowIndex > 0)
+      {
+        batchCores.removeAll(geometricModels[rowIndex - 1].getAssignedCores());
         //Instead of discarding, compare to increase certainty?
-        geometricModel[rowIndex].clearCores();
+        geometricModels[rowIndex].clearCores();
+        createBatchInformation(rowIndex, batchCores, boundModel);
       }
 
       assignBatch(rowIndex, batchCores);
-      createAssignmentInformation();
+      createBatchInformation(rowIndex, batchCores, null);
     }
 
     System.out.println("Done.");
@@ -103,7 +126,6 @@ public class GeometricBatchSolver extends AssignmentSolver
 
   private void initialize(AssignmentInformation simplestAssignmentInformation)
   {
-    //TODO How to avoid "overfitted" curves?? Should always have low-angle curves.
     for (int i = 0; i < modelCount; i++)
     {
       List<Assignment> lowestInRow = simplestAssignmentInformation.
@@ -111,11 +133,11 @@ public class GeometricBatchSolver extends AssignmentSolver
       double yAvg = 0;
       for (Assignment assignment : lowestInRow)
       {
-        yAvg += cores.get(assignment.getCoreIndex()).getCenterY();
+        yAvg += assignment.getCore().getCenterY();
       }
       yAvg /= lowestInRow.size();
 
-      geometricModel[i].setCoefficients(new double[]
+      geometricModels[i].setCoefficients(new double[]
       {
         LOW_ANGLE_INIT_FACTOR, LOW_ANGLE_INIT_FACTOR, yAvg
       });
@@ -126,14 +148,13 @@ public class GeometricBatchSolver extends AssignmentSolver
   {
     for (int i = 0; i < batchCores.size(); i++)
     {
-      //TODO Redundant cores need to be handled before this!
       //TODO Check previous models for cores, if contained re-compare distances
-      GeometricModel model1 = geometricModel[modelIndex];
-      GeometricModel model2 = geometricModel[modelIndex + 1];
+      GeometricModel model1 = geometricModels[modelIndex];
+      GeometricModel model2 = geometricModels[modelIndex + 1];
 
       TissueCore core = batchCores.get(i);
       ///
-      if (core.getId() == 254 || core.getId() == 243 || core.getId() == 224)
+      if (core.getId() == 219)
       {
         int a = 3;
       }
@@ -237,6 +258,8 @@ public class GeometricBatchSolver extends AssignmentSolver
           break;
       }
     }
+    geometricModels[modelIndex].updateModel();
+    geometricModels[modelIndex].removeOutliers();
   }
 
   @Override
@@ -248,26 +271,60 @@ public class GeometricBatchSolver extends AssignmentSolver
   @Override
   protected void createAssignmentInformation()
   {
+
+  }
+
+  protected void createBatchInformation(int rowIndex, List<TissueCore> batchCores, 
+          GeometricModel boundModel)
+  {
     ImageProcessor imageProcessor = new ImageProcessor();
     BufferedImage edgeImage = imageProcessor.readImage(
             DefaultConfigValues.FILE_PATH_EDGE,
             edgeFileName);
     Graphics2D g = (Graphics2D) edgeImage.getGraphics();
 
-    for (int i = 0; i < modelCount; i++)
+    //Draw cores considered in this batch
+    g.setColor(Color.ORANGE);
+    g.setStroke(new BasicStroke(1));
+    for (TissueCore batchCore : batchCores)
     {
-      g.setColor(Color.GREEN);
+      Rectangle boundingBox = batchCore.getBoundingBox();
+      g.drawRect(boundingBox.x + 5, boundingBox.y + 5, boundingBox.width - 10,
+              boundingBox.height - 10);
+    }
+    
+    int upper = Math.min(rowIndex + 1, geometricModels.length - 1);
+    
+    GeometricModel models[] = new GeometricModel[3];
+    models[0] = geometricModels[rowIndex];
+    models[1] = geometricModels[upper];
+    models[2] = boundModel;
+    
+    for (int i = 0; i < models.length; i++)
+    {
+      GeometricModel model = models[i];
+      if(i == 2)
+      {
+        if(boundModel == null)
+        {
+          continue;
+        }
+        g.setColor(Color.ORANGE);
+      }
+      else
+      {
+        g.setColor(Color.GREEN);
+      }
       g.setStroke(new BasicStroke(2));
 
-      double[] coefficients = geometricModel[i].getCoefficients();
+      double[] coefficients = model.getCoefficients();
       if (coefficients.length == 3)
       {
         int[] curvePointsX = new int[edgeImage.getWidth()];
         int[] curvePointsY = new int[edgeImage.getWidth()];
         for (int x = 0; x < edgeImage.getWidth(); x++)
         {
-          int y = (int) (coefficients[0] * Math.pow(x, 2) + coefficients[1] * x
-                  + coefficients[2]);
+          int y = model.getY(x);
           curvePointsX[x] = x;
           curvePointsY[x] = y;
         }
@@ -275,20 +332,20 @@ public class GeometricBatchSolver extends AssignmentSolver
 
         g.setColor(Color.CYAN);
 
-        for (int j = 0; j < geometricModel[i].getCoreCount(); j++)
+        for (int j = 0; j < model.getCoreCount(); j++)
         {
-          TissueCore core = geometricModel[i].getCore(j);
+          TissueCore core = model.getCore(j);
           int x = core.getCenterX();
           int coreY = core.getCenterY();
-          int curveY = (int) (coefficients[0] * Math.pow(x, 2) + coefficients[1] * x
-                  + coefficients[2]);
+          int curveY = model.getY(x);
 
           g.setStroke(new BasicStroke(2));
           g.drawLine(x, coreY, x, curveY);
 
           Rectangle boundingBox = core.getBoundingBox();
           g.setStroke(new BasicStroke(1));
-          g.drawRect(boundingBox.x, boundingBox.y, boundingBox.width, boundingBox.height);
+          g.drawRect(boundingBox.x, boundingBox.y, boundingBox.width,
+                  boundingBox.height);
         }
       }
     }

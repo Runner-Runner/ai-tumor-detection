@@ -4,7 +4,6 @@ import static extractcores.DefaultConfigValues.EXTREME_CORE_RATIO_THRESHOLD;
 import static extractcores.DefaultConfigValues.LARGE_CORE_AREA_THRESHOLD;
 import static extractcores.DefaultConfigValues.MIN_OBJECT_AREA;
 import extractcores.assignmentproblem.GeometricBatchSolver;
-import extractcores.assignmentproblem.GeometricKMeansSolver;
 import java.awt.Color;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
@@ -15,6 +14,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
@@ -39,19 +40,27 @@ public class CoreExtractor
     ImageProcessor imageProcessor = new ImageProcessor();
     BufferedImage edgeImage = imageProcessor.readImage(pathName, edgeFileName);
 
+    List<TissueCore> cores = detectCores(pathName, edgeFileName,
+            labelInformation, edgeImage);
+
+    List<TissueCore> labeledCores = assignLabels(labelInformation, cores,
+            edgeFileName);
+
+    return labeledCores;
+  }
+
+  private List<TissueCore> detectCores(String pathName, String edgeFileName,
+          LabelInformation labelInformation, BufferedImage edgeImage)
+  {
     //rgb color = -1 => bright pixel/edge
     Mat edgeMat = Imgcodecs.imread(pathName + edgeFileName, Imgcodecs.CV_LOAD_IMAGE_GRAYSCALE);
-
     Mat hierarchy = new Mat();
     List<MatOfPoint> contours = new ArrayList<>();
     Imgproc.findContours(edgeMat, contours, hierarchy, Imgproc.RETR_EXTERNAL,
             Imgproc.CHAIN_APPROX_SIMPLE);
-
     List<TissueCore> allCores = new ArrayList<>();
-
     List<Integer> boundingAreas = new ArrayList<>();
     List<Double> boundingSideRatios = new ArrayList<>();
-
     for (int i = 0; i < contours.size(); i++)
     {
       Rect boundingBox = Imgproc.boundingRect(contours.get(i));
@@ -68,14 +77,15 @@ public class CoreExtractor
       boundingAreas.add(boundingBoxArea);
       boundingSideRatios.add(sideRatio);
     }
-
     List<TissueCore> mergedCores = mergeIntersectingRectangles(allCores);
-
-    for(int i=0; i<mergedCores.size(); i++)
+    for (int i = 0; i < mergedCores.size(); i++)
     {
-      mergedCores.get(i).setId(i);
+      mergedCores.get(i).setIds(i);
     }
-    
+
+    //Detect and merge redundant core parts
+    mergedCores = mergeBrokenCores(mergedCores, labelInformation);
+
     int coreCount = labelInformation.getCoreCount();
     int foundCoreCount = mergedCores.size();
     int missingCoreCount = coreCount - foundCoreCount;
@@ -89,18 +99,15 @@ public class CoreExtractor
       missingCoreCount *= -1;
       coreMessage = " redundant cores were found.";
     }
-
     double coreDetectionPercentage
             = Double.valueOf(foundCoreCount)
             / coreCount * 100;
     System.out.println("Detected cores: "
             + String.format("%.2f", coreDetectionPercentage) + "%. "
             + missingCoreCount + coreMessage);
-
     createCoreInformation(edgeImage, allCores, mergedCores, edgeFileName,
             boundingAreas, boundingSideRatios);
-
-    return assignLabels(labelInformation, mergedCores, edgeFileName);
+    return mergedCores;
   }
 
   private List<TissueCore> mergeIntersectingRectangles(List<TissueCore> sourceCores)
@@ -183,6 +190,93 @@ public class CoreExtractor
     return null;
   }
 
+  private List<TissueCore> mergeBrokenCores(List<TissueCore> cores,
+          LabelInformation labelInformation)
+  {
+    List<TissueCore> copyCores = new ArrayList<>();
+    copyCores.addAll(cores);
+    List<TissueCore> mergedCores = new ArrayList<>();
+    mergedCores.addAll(cores);
+
+    CoreComparator coreComparator = new CoreComparator();
+    coreComparator.setComparisonType(CoreComparator.CompareType.VERTICAL_CENTER);
+    Collections.sort(copyCores, coreComparator);
+
+    int avgBoundingArea = 0;
+    int avgSmallestDistance = 0;
+
+    List<List<Distance>> coreDistances = new ArrayList<>();
+    for (int i = 0; i < copyCores.size(); i++)
+    {
+      List<Distance> distances = new ArrayList<>();
+      coreDistances.add(distances);
+
+      TissueCore core = copyCores.get(i);
+      avgBoundingArea += core.getBoundingBox().getHeight()
+              * core.getBoundingBox().getWidth();
+
+      for (int j = 0; j < copyCores.size(); j++)
+      {
+        if (i == j)
+        {
+          continue;
+        }
+
+        TissueCore otherCore = copyCores.get(j);
+        int distance = core.getDistance(otherCore);
+
+        distances.add(new Distance(otherCore, distance));
+      }
+      Collections.sort(distances);
+      avgSmallestDistance += distances.get(0).value;
+    }
+
+    avgBoundingArea /= copyCores.size();
+    avgSmallestDistance /= copyCores.size();
+
+    double brokenDistanceThreshold = 0.5 * avgSmallestDistance;
+    double combinedSizeThreshold = 1.5 * avgBoundingArea;
+
+    for (int i = 0; i < coreDistances.size(); i++)
+    {
+      List<Distance> distances = coreDistances.get(i);
+      List<TissueCore> toBeMerged = new ArrayList<>();
+      for (int j = 0; j < distances.size(); j++)
+      {
+        Distance distance = distances.get(j);
+        if (distance.value > brokenDistanceThreshold)
+        {
+          break;
+        }
+        toBeMerged.add(distance.core);
+      }
+      if (!toBeMerged.isEmpty())
+      {
+        TissueCore core = copyCores.get(i);
+        toBeMerged.add(core);
+        int[] ids = new int[toBeMerged.size()];
+        for(int k=0; k<ids.length; k++)
+        {
+          ids[k] = toBeMerged.get(k).getId();
+        }
+        TissueCore unionCore = TissueCore.union(toBeMerged);
+        unionCore.setIds(ids);
+
+        double unionArea = unionCore.getBoundingBox().getHeight()
+                * unionCore.getBoundingBox().getWidth();
+        if (unionArea < combinedSizeThreshold)
+        {
+          boolean changed = mergedCores.removeAll(toBeMerged);
+          if(changed)
+          {
+            mergedCores.add(unionCore);
+          }
+        }
+      }
+    }
+    return mergedCores;
+  }
+
   private void createCoreInformation(BufferedImage edgeImage,
           List<TissueCore> allCores, List<TissueCore> mergedCores,
           String edgeFileName, List<Integer> boundingAreas,
@@ -231,7 +325,7 @@ public class CoreExtractor
     String indexString = String.valueOf(index);
     int x = boundingBox.x + boundingBox.width - 20;
     int y = boundingBox.y + boundingBox.height - 20;
-    
+
     FontMetrics fm = g.getFontMetrics();
     Rectangle2D rect = fm.getStringBounds(indexString, g);
 
@@ -242,5 +336,23 @@ public class CoreExtractor
             (int) rect.getHeight());
     g.setColor(Color.GREEN);
     g.drawString(indexString, x, y);
+  }
+
+  private class Distance implements Comparable<Distance>
+  {
+    public TissueCore core;
+    public int value;
+
+    public Distance(TissueCore core, int value)
+    {
+      this.core = core;
+      this.value = value;
+    }
+
+    @Override
+    public int compareTo(Distance distance)
+    {
+      return this.value - distance.value;
+    }
   }
 }

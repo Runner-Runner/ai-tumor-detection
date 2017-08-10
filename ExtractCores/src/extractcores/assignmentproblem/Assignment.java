@@ -1,17 +1,19 @@
 package extractcores.assignmentproblem;
 
+import extractcores.TissueCore;
+
 public class Assignment implements Comparable<Assignment>
 {
   private int row;
   private int column;
-  private Integer coreIndex;
+  private TissueCore core;
   private Integer distanceCost;
 
-  public Assignment(int row, int column, Integer coreIndex, Integer distanceCost)
+  public Assignment(int row, int column, TissueCore core, Integer distanceCost)
   {
     this.row = row;
     this.column = column;
-    this.coreIndex = coreIndex;
+    this.core = core;
     this.distanceCost = distanceCost;
   }
 
@@ -31,11 +33,11 @@ public class Assignment implements Comparable<Assignment>
     return column;
   }
 
-  public Integer getCoreIndex()
+  public TissueCore getCore()
   {
-    return coreIndex;
+    return core;
   }
-
+  
   public Integer getDistanceCost()
   {
     return distanceCost;

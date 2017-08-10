@@ -83,7 +83,7 @@ public class GeometricKMeansSolver extends AssignmentSolver
       double yAvg = 0;
       for (Assignment assignment : lowestInRow)
       {
-        yAvg += cores.get(assignment.getCoreIndex()).getCenterY();
+        yAvg += assignment.getCore().getCenterY();
       }
       yAvg /= lowestInRow.size();
 
