@@ -3,6 +3,8 @@ package extractcores;
 import static extractcores.DefaultConfigValues.EXTREME_CORE_RATIO_THRESHOLD;
 import static extractcores.DefaultConfigValues.LARGE_CORE_AREA_THRESHOLD;
 import static extractcores.DefaultConfigValues.MIN_OBJECT_AREA;
+import extractcores.assignmentproblem.Assignment;
+import extractcores.assignmentproblem.AssignmentInformation;
 import extractcores.assignmentproblem.GeometricBatchSolver;
 import java.awt.Color;
 import java.awt.FontMetrics;
@@ -14,8 +16,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import label.ManualSolutionReader;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
@@ -31,7 +32,7 @@ public class CoreExtractor
   }
 
   public List<TissueCore> findCores(String pathName, String edgeFileName,
-          String labelFileName)
+          String labelFileName, int digitKey)
   {
     LabelProcessor labelProcessor = new LabelProcessor();
     LabelInformation labelInformation = labelProcessor.readTxtLabelFile(
@@ -44,7 +45,7 @@ public class CoreExtractor
             labelInformation, edgeImage);
 
     List<TissueCore> labeledCores = assignLabels(labelInformation, cores,
-            edgeFileName);
+            edgeFileName, digitKey);
 
     return labeledCores;
   }
@@ -176,7 +177,7 @@ public class CoreExtractor
   }
 
   private List<TissueCore> assignLabels(LabelInformation labelInformation,
-          List<TissueCore> cores, String edgeFileName)
+          List<TissueCore> cores, String edgeFileName, int digitKey)
   {
     GeometricBatchSolver solver = new GeometricBatchSolver(
             cores, labelInformation, edgeFileName);
@@ -187,6 +188,130 @@ public class CoreExtractor
 //    SimpleGridSolver solver = new SimpleGridSolver(cores, labelInformation, 
 //            edgeFileName);
     solver.assignCores();
+    AssignmentInformation assignmentInformation = solver.getAssignmentInformation();
+
+    ManualSolutionReader solutionReader = new ManualSolutionReader();
+    AssignmentInformation solutionAssignmentInformation = solutionReader.
+            readSolution(digitKey);
+
+    int cellCount = labelInformation.getRowCount()
+            * labelInformation.getColumnCount();
+
+    int solutionCoreCount = 0;
+    int solutionGapCount = 0;
+    int solutionMergeCount = 0;
+
+    int correctCoreCount = 0;
+    int correctGapCount = 0;
+    int correctMergeCount = 0;
+
+    System.out.println("Core assignment results for #" + digitKey + ":");
+
+    for (int i = 0; i < labelInformation.getRowCount(); i++)
+    {
+      for (int j = 0; j < labelInformation.getColumnCount(); j++)
+      {
+        System.out.print("Cell (" + (i + 1) + "/" + (j + 1) + "): ");
+
+        Assignment assignment = assignmentInformation.getAssignment(i, j);
+        Assignment solutionAssignment = solutionAssignmentInformation.
+                getAssignment(i, j);
+
+        if (assignment == null && solutionAssignment == null)
+        {
+          correctGapCount++;
+          solutionGapCount++;
+          System.out.print("Found correct gap.");
+        }
+        else if (assignment != null && solutionAssignment != null)
+        {
+
+          int[] ids = assignment.getCore().getIds();
+          int[] solutionIds = solutionAssignment.getCore().getIds();
+
+          if (solutionIds.length > 1)
+          {
+            solutionMergeCount++;
+          }
+          else
+          {
+            solutionCoreCount++;
+          }
+
+          //Check if both ID lists contain the exact same IDs
+          if (ids.length == solutionIds.length)
+          {
+            boolean identical = true;
+            for (int k = 0; k < ids.length; k++)
+            {
+              boolean found = false;
+              for (int m = 0; m < solutionIds.length; m++)
+              {
+                if (ids[k] == solutionIds[m])
+                {
+                  found = true;
+                  break;
+                }
+              }
+              if (!found)
+              {
+                identical = false;
+                break;
+              }
+            }
+            if (identical)
+            {
+              if (ids.length > 1)
+              {
+                correctMergeCount++;
+                System.out.print("Correct assignment: id = " + ids[0] + ".");
+              }
+              else
+              {
+                System.out.print("Correct merge: ids = [" + Arrays.toString(ids)
+                        + "].");
+                correctCoreCount++;
+              }
+            }
+            else
+            {
+              if (ids.length > 1 || solutionIds.length > 1)
+              {
+                System.out.print("Merge difference: assigned [" + 
+                        Arrays.toString(ids)
+                        + "], actually [" + 
+                        Arrays.toString(solutionIds) + "].");
+              }
+              else
+              {
+                System.out.print("Wrong ID: assigned [" + ids[0]
+                        + "], actually [" + solutionIds[0] + "].");
+              }
+            }
+          }
+        }
+        System.out.println("");
+      }
+    }
+
+    double correctCorePercent = Double.valueOf(correctCoreCount) / solutionCoreCount * 100;
+    double correctGapPercent = Double.valueOf(correctGapCount) / solutionGapCount * 100;
+    double correctMergePercent = Double.valueOf(correctMergeCount) / solutionMergeCount * 100;
+    double totalPercent = Double.valueOf(
+            correctCoreCount + correctGapCount + correctMergeCount) / cellCount * 100;
+    System.out.println("Total Results:");
+
+    System.out.println("Correct cores: " + correctCoreCount + "/"
+            + solutionCoreCount + ", "
+            + String.format("%.2f", correctCorePercent) + "%.");
+    System.out.println("Correct gaps: " + correctGapCount + "/"
+            + solutionGapCount + ", "
+            + String.format("%.2f", correctGapPercent) + "%.");
+    System.out.println("Correct merges: " + correctMergeCount + "/"
+            + solutionMergeCount + ", "
+            + String.format("%.2f", correctMergePercent) + "%.");
+    System.out.println("Overall performance: " + String.format("%.2f", totalPercent) + "%.");
+    
     return null;
   }
 
@@ -255,7 +380,7 @@ public class CoreExtractor
         TissueCore core = copyCores.get(i);
         toBeMerged.add(core);
         int[] ids = new int[toBeMerged.size()];
-        for(int k=0; k<ids.length; k++)
+        for (int k = 0; k < ids.length; k++)
         {
           ids[k] = toBeMerged.get(k).getId();
         }
@@ -267,7 +392,7 @@ public class CoreExtractor
         if (unionArea < combinedSizeThreshold)
         {
           boolean changed = mergedCores.removeAll(toBeMerged);
-          if(changed)
+          if (changed)
           {
             mergedCores.add(unionCore);
           }

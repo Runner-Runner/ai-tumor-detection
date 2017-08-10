@@ -1,7 +1,9 @@
 package extractcores.assignmentproblem;
 
+import extractcores.CoreComparator;
 import extractcores.TissueCore;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public abstract class GeometricModel
@@ -17,12 +19,12 @@ public abstract class GeometricModel
   {
     assignedCores.add(core);
   }
-  
+
   public void addCores(List<TissueCore> cores)
   {
     assignedCores.addAll(cores);
   }
-  
+
   public boolean removeCore(TissueCore core)
   {
     return assignedCores.remove(core);
@@ -45,9 +47,12 @@ public abstract class GeometricModel
 
   public List<TissueCore> getAssignedCores()
   {
+    CoreComparator coreComparator = new CoreComparator();
+    coreComparator.setComparisonType(CoreComparator.CompareType.HORIZONTAL_CENTER);
+    Collections.sort(assignedCores, coreComparator);
     return assignedCores;
   }
-  
+
   public abstract double[] getCoefficients();
 
   public abstract void setCoefficients(double[] coefficients);
@@ -58,7 +63,7 @@ public abstract class GeometricModel
           double intervalHeight);
 
   public abstract TissueCore getXOverlappingCore(TissueCore core);
-  
+
   public abstract void updateModel();
 
   public abstract List<TissueCore> removeOutliers();

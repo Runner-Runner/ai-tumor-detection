@@ -9,13 +9,20 @@ public abstract class AssignmentSolver
   protected List<TissueCore> cores;
   protected LabelInformation labelInformation;
   protected String edgeFileName;
-  
-  public AssignmentSolver(List<TissueCore> cores, 
+
+  protected AssignmentInformation assignmentInformation;
+
+  public AssignmentSolver(List<TissueCore> cores,
           LabelInformation labelInformation, String edgeFileName)
   {
     this.cores = cores;
     this.labelInformation = labelInformation;
     this.edgeFileName = edgeFileName;
+  }
+
+  public AssignmentInformation getAssignmentInformation()
+  {
+    return assignmentInformation;
   }
 
   public abstract List<TissueCore> createLabeledCores();

@@ -6,6 +6,7 @@ import extractcores.ImageProcessor;
 import static extractcores.ImageProcessor.appendFilename;
 import extractcores.LabelInformation;
 import extractcores.TissueCore;
+import hungarian.Hungarian;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -18,24 +19,17 @@ import java.util.List;
 public class GeometricBatchSolver extends AssignmentSolver
 {
   private int modelCount;
-  /**
-   * Upper limit for assignments, higher than max to account for redundance
-   */
-  private int columnCount;
   private GeometricModel[] geometricModels;
   private SimpleGridSolver simpleSolver;
 
-  private static int infoImageCount = 0;
   private static final int INITIAL_MODEL_POINTS = 3;
   private static final double LOW_ANGLE_INIT_FACTOR = 0.000001;
 
   public GeometricBatchSolver(List<TissueCore> cores, LabelInformation labelInformation, String edgeFileName)
   {
     super(cores, labelInformation, edgeFileName);
-    columnCount = labelInformation.getColumnCount();
     modelCount = labelInformation.getRowCount();
     geometricModels = new GeometricModel[modelCount];
-    //TODO does that make sense here?
     for (int i = 0; i < modelCount; i++)
     {
       geometricModels[i] = generateGeometricModel();
@@ -44,7 +38,6 @@ public class GeometricBatchSolver extends AssignmentSolver
 
   private GeometricModel generateGeometricModel()
   {
-    //TODO do I even need polynomials here? Does it work with just avged lines?
     return new PolynomialModel();
   }
 
@@ -136,6 +129,86 @@ public class GeometricBatchSolver extends AssignmentSolver
     for (TissueCore core : copyCores)
     {
       System.out.print(core.getId() + " ");
+    }
+    System.out.println("");
+
+    assignmentInformation = new AssignmentInformation();
+    for (int i = 0; i < geometricModels.length; i++)
+    {
+      GeometricModel model = geometricModels[i];
+      List<TissueCore> assignedCores = model.getAssignedCores();
+      int coreCount = assignedCores.size();
+      int columnCount = labelInformation.getColumnCount();
+      int[] indexResult = new int[columnCount];
+
+      if (coreCount > columnCount)
+      {
+        //TODO use hungarian for all with dummies!
+        System.out.print("Too many cores assigned to model #" + (i + 1) + ". Ignored cores: ");
+        for (int j = coreCount - 1; j >= columnCount; j--)
+        {
+          TissueCore core = assignedCores.remove(j);
+          coreCount = columnCount;
+          System.out.print(core.getId() + " ");
+        }
+        System.out.println("");
+      }
+
+      if (coreCount == columnCount)
+      {
+        for (int j = 0; j < coreCount; j++)
+        {
+          indexResult[j] = j;
+        }
+      }
+      else
+      {
+        int[] coreScale = new int[columnCount];
+        double intervalWidth = simpleSolver.getIntervalWidth();
+        int minX = simpleSolver.getMinX();
+        int interval = (int) (minX + intervalWidth / 2);
+        for (int j = 0; j < columnCount; j++)
+        {
+          coreScale[j] = interval;
+          interval += intervalWidth;
+        }
+
+        int[][] rowCostMatrix = new int[columnCount][columnCount];
+        for (int j = 0; j < columnCount; j++)
+        {
+          int centerX;
+          if (j >= coreCount)
+          {
+            centerX = Integer.MAX_VALUE;
+          }
+          else
+          {
+            TissueCore core = assignedCores.get(j);
+            centerX = core.getCenterX();
+          }
+
+          for (int k = 0; k < columnCount; k++)
+          {
+            if (centerX == Integer.MAX_VALUE)
+            {
+              rowCostMatrix[j][k] = Integer.MAX_VALUE;
+            }
+            else
+            {
+              rowCostMatrix[j][k] = (int) Math.pow(coreScale[k] - centerX, 2);
+            }
+          }
+        }
+        Hungarian hungarian = new Hungarian(rowCostMatrix);
+        indexResult = hungarian.getResult();
+      }
+      for (int j = 0; j < coreCount; j++)
+      {
+        TissueCore core = assignedCores.get(j);
+        int index = indexResult[j];
+
+        assignmentInformation.addAssignment(i, index, core, null);
+      }
     }
 
     System.out.println("Done.");

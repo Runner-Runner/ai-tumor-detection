@@ -29,8 +29,6 @@ public abstract class GridSolver extends AssignmentSolver
   protected double intervalWidth;
   protected double intervalHeight;
 
-  protected AssignmentInformation assignmentInformation;
-
   public GridSolver(List<TissueCore> cores, LabelInformation labelInformation,
           String edgeFileName)
   {
@@ -194,11 +192,6 @@ public abstract class GridSolver extends AssignmentSolver
     {
       rowIndex, columnIndex
     };
-  }
-
-  public AssignmentInformation getAssignmentInformation()
-  {
-    return assignmentInformation;
   }
 
   public double getIntervalWidth()

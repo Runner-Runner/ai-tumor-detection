@@ -8,10 +8,10 @@ public class Main
 {
   public static void main(String[] args) throws IOException
   {
-    processImage(null, "5707");
+    processImage(null, 5707);
   }
 
-  public static void processImage(String path, String digitKey)
+  public static void processImage(String path, int digitKey)
   {
 //    createDownsampleImage(path, digitKey);
 //    createEdgeImage(digitKey);
@@ -47,7 +47,7 @@ public class Main
             digitKey + "-ds.png");
   }
 
-  public static void findCores(String digitKey)
+  public static void findCores(int digitKey)
   {
     ImageProcessor imageProcessor = new ImageProcessor();
 
@@ -56,7 +56,7 @@ public class Main
 
     CoreExtractor coreExtractor = new CoreExtractor();
     coreExtractor.findCores(DefaultConfigValues.FILE_PATH_EDGE,
-            digitKey + "-edge.png", digitKey + "-label.txt");
+            digitKey + "-edge.png", digitKey + "-label.txt", digitKey);
   }
 
   public static void createLabelIdentifyingImages()

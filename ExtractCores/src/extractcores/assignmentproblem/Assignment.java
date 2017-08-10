@@ -20,7 +20,21 @@ public class Assignment implements Comparable<Assignment>
   @Override
   public int compareTo(Assignment other)
   {
-    return this.getDistanceCost() - other.getDistanceCost();
+    Integer distance = this.getDistanceCost();
+    Integer otherDistance = this.getDistanceCost();
+    if(distance == null && otherDistance == null)
+    {
+      return 0;
+    }
+    else if(distance == null)
+    {
+      return -1;
+    }
+    else if(otherDistance == null)
+    {
+      return 1;
+    }
+    return  - other.getDistanceCost();
   }
 
   public int getRow()
