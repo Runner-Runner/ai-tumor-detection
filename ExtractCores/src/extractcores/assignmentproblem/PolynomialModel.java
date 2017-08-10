@@ -12,12 +12,9 @@ public class PolynomialModel extends GeometricModel
   private double cx;
   private double c;
 
-  private static final int DEVIATION_FACTOR = 10;
-
   public PolynomialModel()
   {
     super();
-    //TODO initial values?
     cx2 = 1;
     cx = 1;
     c = 0;
@@ -163,18 +160,32 @@ public class PolynomialModel extends GeometricModel
   {
     List<TissueCore> outliers = new ArrayList<>();
 
-    double avgDistance = 0;
+    double distanceMean = 0;
     double[] distances = new double[assignedCores.size()];
     for (int i = 0; i < assignedCores.size(); i++)
     {
       TissueCore core = assignedCores.get(i);
-      avgDistance += distances[i] = getDistance(core);
+      if (core.getId() == 42)
+      {
+        int a = 3;
+      }
+
+      distanceMean += distances[i] = getDistance(core);
     }
-    avgDistance /= assignedCores.size();
+    distanceMean /= assignedCores.size();
+
+    double sum = 0;
+    for (int i = 0; i < distances.length; i++)
+    {
+      sum += Math.pow(distances[i] - distanceMean, 2);
+    }
+    double distanceStandardDeviation = Math.sqrt(sum / (distances.length - 1));
 
     for (int i = 0; i < distances.length; i++)
     {
-      if (distances[i] > DEVIATION_FACTOR * avgDistance)
+      double deviation = Math.abs(distances[i] - distanceStandardDeviation);
+      
+      if (deviation > 2*distanceStandardDeviation)
       {
         outliers.add(assignedCores.remove(i));
       }

@@ -18,6 +18,11 @@ public abstract class GeometricModel
     assignedCores.add(core);
   }
   
+  public void addCores(List<TissueCore> cores)
+  {
+    assignedCores.addAll(cores);
+  }
+  
   public boolean removeCore(TissueCore core)
   {
     return assignedCores.remove(core);

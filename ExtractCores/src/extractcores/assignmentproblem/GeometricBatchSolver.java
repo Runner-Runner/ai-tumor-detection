@@ -69,9 +69,20 @@ public class GeometricBatchSolver extends AssignmentSolver
     copyCores.addAll(cores);
     List<TissueCore> batchCores = new ArrayList<>();
 
-    for (int rowIndex = 0; rowIndex < modelCount - 1; rowIndex++)
-//    for (int rowIndex = 0; rowIndex < 4; rowIndex++)
+    for (int rowIndex = 0; rowIndex < modelCount; rowIndex++)
     {
+      if (rowIndex == modelCount - 1)
+      {
+        System.out.println("Processing batch: last row " + (rowIndex + 1) + ".");
+        //Assign remaining cores, remove outliers
+        GeometricModel model = geometricModels[modelCount - 1];
+        model.addCores(copyCores);
+        model.updateModel();
+        model.removeOutliers();
+        createBatchInformation(rowIndex, batchCores, null);
+        continue;
+      }
+
       System.out.println("Processing batch: row " + (rowIndex + 1) + " and "
               + (rowIndex + 2) + ".");
 
@@ -89,11 +100,11 @@ public class GeometricBatchSolver extends AssignmentSolver
         boundModel.setCoefficients(coefficients);
       }
 
-      for (int i = 0; i<copyCores.size(); i++)
+      for (int i = 0; i < copyCores.size(); i++)
       {
         TissueCore core = copyCores.get(i);
         ///
-        if(core.getId() == 205)
+        if (core.getId() == 205)
         {
           int a = 3;
         }
@@ -119,6 +130,12 @@ public class GeometricBatchSolver extends AssignmentSolver
 
       assignBatch(rowIndex, batchCores);
       createBatchInformation(rowIndex, batchCores, null);
+    }
+
+    System.out.println(copyCores.size() + " cores without assignment: ");
+    for (TissueCore core : copyCores)
+    {
+      System.out.print(core.getId() + " ");
     }
 
     System.out.println("Done.");
@@ -274,7 +291,7 @@ public class GeometricBatchSolver extends AssignmentSolver
 
   }
 
-  protected void createBatchInformation(int rowIndex, List<TissueCore> batchCores, 
+  protected void createBatchInformation(int rowIndex, List<TissueCore> batchCores,
           GeometricModel boundModel)
   {
     ImageProcessor imageProcessor = new ImageProcessor();
@@ -292,20 +309,20 @@ public class GeometricBatchSolver extends AssignmentSolver
       g.drawRect(boundingBox.x + 5, boundingBox.y + 5, boundingBox.width - 10,
               boundingBox.height - 10);
     }
-    
+
     int upper = Math.min(rowIndex + 1, geometricModels.length - 1);
-    
+
     GeometricModel models[] = new GeometricModel[3];
     models[0] = geometricModels[rowIndex];
     models[1] = geometricModels[upper];
     models[2] = boundModel;
-    
+
     for (int i = 0; i < models.length; i++)
     {
       GeometricModel model = models[i];
-      if(i == 2)
+      if (i == 2)
       {
-        if(boundModel == null)
+        if (boundModel == null)
         {
           continue;
         }
@@ -351,8 +368,14 @@ public class GeometricBatchSolver extends AssignmentSolver
     }
 
     g.dispose();
+    String postfix = "";
+    if (boundModel != null)
+    {
+      postfix = "-boundary";
+    }
     imageProcessor.writeImage(edgeImage,
             DefaultConfigValues.FILE_PATH_INFORMATIVE,
-            appendFilename(edgeFileName, "batch-" + ++infoImageCount, "png"));
+            appendFilename(edgeFileName, "batch-r" + rowIndex + "-"
+                    + (rowIndex + 1) + postfix, "png"));
   }
 }
