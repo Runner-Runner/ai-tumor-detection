@@ -225,7 +225,6 @@ public class CoreExtractor
         }
         else if (assignment != null && solutionAssignment != null)
         {
-
           int[] ids = assignment.getCore().getIds();
           int[] solutionIds = solutionAssignment.getCore().getIds();
 
@@ -277,10 +276,10 @@ public class CoreExtractor
             {
               if (ids.length > 1 || solutionIds.length > 1)
               {
-                System.out.print("Merge difference: assigned [" + 
-                        Arrays.toString(ids)
-                        + "], actually [" + 
-                        Arrays.toString(solutionIds) + "].");
+                System.out.print("Merge difference: assigned ["
+                        + Arrays.toString(ids)
+                        + "], actually ["
+                        + Arrays.toString(solutionIds) + "].");
               }
               else
               {
@@ -289,6 +288,18 @@ public class CoreExtractor
               }
             }
           }
+        }
+        else if (assignment == null && solutionAssignment != null)
+        {
+          solutionCoreCount++;
+          System.out.print("Missing core: ID = " + Arrays.toString(
+                  solutionAssignment.getCore().getIds()) + ".");
+        }
+        else if (assignment != null && solutionAssignment == null)
+        {
+          solutionGapCount++;
+          System.out.print("Assigned core into gap: ID = " + Arrays.toString(
+                  assignment.getCore().getIds()) + ".");
         }
         System.out.println("");
       }
@@ -311,7 +322,7 @@ public class CoreExtractor
             + solutionMergeCount + ", "
             + String.format("%.2f", correctMergePercent) + "%.");
     System.out.println("Overall performance: " + String.format("%.2f", totalPercent) + "%.");
-    
+
     return null;
   }
 
