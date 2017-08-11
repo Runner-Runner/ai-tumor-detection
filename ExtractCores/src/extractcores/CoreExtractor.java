@@ -6,6 +6,7 @@ import static extractcores.DefaultConfigValues.MIN_OBJECT_AREA;
 import extractcores.assignmentproblem.Assignment;
 import extractcores.assignmentproblem.AssignmentInformation;
 import extractcores.assignmentproblem.GeometricBatchSolver;
+import extractcores.assignmentproblem.SimpleGridSolver;
 import java.awt.Color;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
@@ -179,17 +180,27 @@ public class CoreExtractor
   private List<TissueCore> assignLabels(LabelInformation labelInformation,
           List<TissueCore> cores, String edgeFileName, int digitKey)
   {
+    SimpleGridSolver simpleSolver = new SimpleGridSolver(cores, labelInformation, 
+            edgeFileName);
+    simpleSolver.assignCores();
+    System.out.println("Performance SimpleGridSolver:");
+    outputPerformance(digitKey, labelInformation, 
+            simpleSolver.getAssignmentInformation());
+    
     GeometricBatchSolver solver = new GeometricBatchSolver(
             cores, labelInformation, edgeFileName);
-//    GeometricKMeansSolver solver = new GeometricKMeansSolver(
-//            cores, labelInformation, edgeFileName);
-//    HungarianAssignmentSolver solver = new HungarianAssignmentSolver(
-//            cores, labelInformation, edgeFileName);
-//    SimpleGridSolver solver = new SimpleGridSolver(cores, labelInformation, 
-//            edgeFileName);
     solver.assignCores();
     AssignmentInformation assignmentInformation = solver.getAssignmentInformation();
 
+    System.out.println("Performance GeometricBatchSolver:");
+    outputPerformance(digitKey, labelInformation, assignmentInformation);
+
+    return null;
+  }
+
+  public void outputPerformance(int digitKey, LabelInformation labelInformation, 
+          AssignmentInformation assignmentInformation)
+  {
     ManualSolutionReader solutionReader = new ManualSolutionReader();
     AssignmentInformation solutionAssignmentInformation = solutionReader.
             readSolution(digitKey);
@@ -322,8 +333,6 @@ public class CoreExtractor
             + solutionMergeCount + ", "
             + String.format("%.2f", correctMergePercent) + "%.");
     System.out.println("Overall performance: " + String.format("%.2f", totalPercent) + "%.");
-
-    return null;
   }
 
   private List<TissueCore> mergeBrokenCores(List<TissueCore> cores,
