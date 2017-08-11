@@ -274,12 +274,12 @@ public class CoreExtractor
               if (ids.length > 1)
               {
                 correctMergeCount++;
-                System.out.print("Correct assignment: id = " + ids[0] + ".");
+                System.out.print("Correct merge: ids = [" + Arrays.toString(ids)
+                        + "].");
               }
               else
               {
-                System.out.print("Correct merge: ids = [" + Arrays.toString(ids)
-                        + "].");
+                System.out.print("Correct assignment: id = " + ids[0] + ".");
                 correctCoreCount++;
               }
             }

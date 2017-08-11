@@ -165,7 +165,7 @@ public class PolynomialModel extends GeometricModel
     for (int i = 0; i < assignedCores.size(); i++)
     {
       TissueCore core = assignedCores.get(i);
-      if (core.getId() == 42)
+      if (core.getId() == 242)
       {
         int a = 3;
       }
@@ -184,12 +184,14 @@ public class PolynomialModel extends GeometricModel
     for (int i = 0; i < distances.length; i++)
     {
       double deviation = Math.abs(distances[i] - distanceStandardDeviation);
-      
-      if (deviation > 2*distanceStandardDeviation)
+
+      //TODO this still doesnt work to well. How to detect these extreme outliers?
+      if (deviation > distanceStandardDeviation)
       {
-        outliers.add(assignedCores.remove(i));
+        outliers.add(assignedCores.get(i));
       }
     }
+    assignedCores.removeAll(outliers);
     return outliers;
   }
 
