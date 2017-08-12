@@ -12,6 +12,7 @@ public interface DefaultConfigValues
   public static final String FILE_PATH_INFORMATIVE = FILE_BASE_PATH + "informative\\";
   public static final String FILE_PATH_INPUT_SEGMENTS = FILE_BASE_PATH + "input images\\";
 
+  public static final String STATISTICS_FILE_NAME = "statistics";
   public static final String CROSSREF_FILE_NAME = "crossref.properties";
   public static final String XLS_PREFIX = "TMA GC ";
   

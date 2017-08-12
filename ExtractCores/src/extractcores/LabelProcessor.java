@@ -41,6 +41,7 @@ public class LabelProcessor
     //Extract key from last part of filename
     Pattern digitPattern = Pattern.compile("^(\\d+)[^\\d]*");
     Matcher matcher = digitPattern.matcher(svsFileName);
+    matcher.find();
     String digitKey = matcher.group(1);
 
     String xlsPostfix = crossref.getProperty(digitKey);
@@ -78,7 +79,7 @@ public class LabelProcessor
     int normalCount = 0;
     int gapCount = 0;
 
-    String[][] labelArray = null;
+    String[][] labelArray;
 
     try
     {

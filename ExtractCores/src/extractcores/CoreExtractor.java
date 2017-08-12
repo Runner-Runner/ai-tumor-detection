@@ -24,6 +24,8 @@ import org.opencv.core.MatOfPoint;
 import org.opencv.core.Rect;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
+import statistics.Statistic;
+import statistics.StatisticsWriter;
 
 public class CoreExtractor
 {
@@ -54,16 +56,19 @@ public class CoreExtractor
     BufferedImage edgeImage = imageProcessor.readImage(pathName, edgeFileName);
 
     List<TissueCore> cores = detectCores(pathName, edgeFileName,
-            labelInformation, edgeImage);
+            labelInformation, edgeImage, digitKey);
 
-    List<TissueCore> labeledCores = assignLabels(labelInformation, cores,
-            edgeFileName, digitKey);
+    List<TissueCore> labeledCores = null;
+    
+    ///Out for testing
+//    List<TissueCore> labeledCores = assignLabels(labelInformation, cores,
+//            edgeFileName, digitKey);
 
     return labeledCores;
   }
 
   private List<TissueCore> detectCores(String pathName, String edgeFileName,
-          LabelInformation labelInformation, BufferedImage edgeImage)
+          LabelInformation labelInformation, BufferedImage edgeImage, int digitKey)
   {
     //rgb color = -1 => bright pixel/edge
     Mat edgeMat = Imgcodecs.imread(pathName + edgeFileName, Imgcodecs.CV_LOAD_IMAGE_GRAYSCALE);
@@ -120,6 +125,19 @@ public class CoreExtractor
             + missingCoreCount + coreMessage);
     createCoreInformation(edgeImage, allCores, mergedCores, edgeFileName,
             boundingAreas, boundingSideRatios);
+    
+    Statistic statistic = new Statistic();
+    statistic.setDigitKey(digitKey);
+    statistic.setLabelInformation(labelInformation);
+    statistic.setImageWidth(edgeImage.getWidth());
+    statistic.setImageHeight(edgeImage.getHeight());
+    for(TissueCore core : mergedCores)
+    {
+      statistic.addCoreWidth(core.getBoundingBox().width);
+      statistic.addCoreHeight(core.getBoundingBox().height);
+    }
+    
+    StatisticsWriter.getInstance().addStatistic(statistic);
     return mergedCores;
   }
 
