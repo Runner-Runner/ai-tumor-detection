@@ -64,7 +64,8 @@ public class Main
 
   public static void createDownsampleImage(int digitKey)
   {
-    File svsFile = new File("E:\\HE_TMA\\" + digitKey + ".svs");
+    File svsFile = new File(DefaultConfigValues.FILE_PATH_DOWNSAMPLE + 
+            digitKey + "-ds.png");
     if(svsFile.exists())
     {
       return;

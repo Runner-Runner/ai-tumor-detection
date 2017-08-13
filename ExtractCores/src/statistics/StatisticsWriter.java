@@ -70,7 +70,7 @@ public class StatisticsWriter
     rows /= caseCount;
     columns /= caseCount;
     cores = totalCores / caseCount;
-    gaps /= totalGaps / caseCount;
+    gaps = totalGaps / caseCount;
     imageWidth /= caseCount;
     imageHeight /= caseCount;
     avgCoreWidth /= caseCount;

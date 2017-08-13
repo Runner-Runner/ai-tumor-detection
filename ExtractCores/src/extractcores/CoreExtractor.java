@@ -2,6 +2,7 @@ package extractcores;
 
 import static extractcores.DefaultConfigValues.EXTREME_CORE_RATIO_THRESHOLD;
 import static extractcores.DefaultConfigValues.LARGE_CORE_AREA_THRESHOLD;
+import static extractcores.DefaultConfigValues.MAX_OBJECT_AREA;
 import static extractcores.DefaultConfigValues.MIN_OBJECT_AREA;
 import extractcores.assignmentproblem.Assignment;
 import extractcores.assignmentproblem.AssignmentInformation;
@@ -77,23 +78,16 @@ public class CoreExtractor
     Imgproc.findContours(edgeMat, contours, hierarchy, Imgproc.RETR_EXTERNAL,
             Imgproc.CHAIN_APPROX_SIMPLE);
     List<TissueCore> allCores = new ArrayList<>();
-    List<Integer> boundingAreas = new ArrayList<>();
-    List<Double> boundingSideRatios = new ArrayList<>();
     for (int i = 0; i < contours.size(); i++)
     {
       Rect boundingBox = Imgproc.boundingRect(contours.get(i));
       int boundingBoxArea = boundingBox.width * boundingBox.height;
-      double sideRatio = Double.valueOf(boundingBox.height) / boundingBox.width;
 
-      //TODO set max limit as well
-      if (boundingBoxArea >= MIN_OBJECT_AREA)
+      if (boundingBoxArea >= MIN_OBJECT_AREA && boundingBoxArea <= MAX_OBJECT_AREA)
       {
         allCores.add(new TissueCore(boundingBox.x, boundingBox.y,
                 boundingBox.width, boundingBox.height));
       }
-
-      boundingAreas.add(boundingBoxArea);
-      boundingSideRatios.add(sideRatio);
     }
     List<TissueCore> mergedCores = mergeIntersectingRectangles(allCores);
     for (int i = 0; i < mergedCores.size(); i++)
@@ -123,8 +117,7 @@ public class CoreExtractor
     System.out.println("Detected cores: "
             + String.format("%.2f", coreDetectionPercentage) + "%. "
             + missingCoreCount + coreMessage);
-    createCoreInformation(edgeImage, allCores, mergedCores, edgeFileName,
-            boundingAreas, boundingSideRatios);
+    createCoreInformation(edgeImage, allCores, mergedCores, edgeFileName);
     
     Statistic statistic = new Statistic();
     statistic.setDigitKey(digitKey);
@@ -503,8 +496,7 @@ public class CoreExtractor
 
   private void createCoreInformation(BufferedImage edgeImage,
           List<TissueCore> allCores, List<TissueCore> mergedCores,
-          String edgeFileName, List<Integer> boundingAreas,
-          List<Double> boundingSideRatios)
+          String edgeFileName)
   {
     BufferedImage foundObjectsImage = new BufferedImage(edgeImage.getWidth(),
             edgeImage.getHeight(), edgeImage.getType());
@@ -530,14 +522,6 @@ public class CoreExtractor
     imageProcessor.writeImage(foundObjectsImage,
             DefaultConfigValues.FILE_PATH_INFORMATIVE,
             ImageProcessor.appendFilename(edgeFileName, "info", "png"));
-
-    Collections.sort(boundingAreas);
-    Collections.reverse(boundingAreas);
-    System.out.println(Arrays.toString(boundingAreas.toArray()));
-
-    Collections.sort(boundingSideRatios);
-    Collections.reverse(boundingSideRatios);
-    System.out.println(Arrays.toString(boundingSideRatios.toArray()));
   }
 
   private void drawBoundingBox(Graphics g, TissueCore core, int index)
