@@ -106,14 +106,34 @@ public class LabelProcessor
 
       //Repeat with columns, skip first row
       int realColumnCount = 0;
-      HSSFRow secondRow = sheet.getRow(1);
-      for (int i = 0; i < columnCount; i++)
+      int firstFilledRowIndex = 1;
+      while (realColumnCount == 0)
       {
-        HSSFCell cell = secondRow.getCell(i);
-        if (cell != null && !cell.getStringCellValue().isEmpty())
+        HSSFRow filledRow = sheet.getRow(firstFilledRowIndex);
+        for (int i = 0; i < columnCount; i++)
         {
-          realColumnCount++;
+          HSSFCell cell = filledRow.getCell(i);
+
+          try
+          {
+            if (cell != null && !cell.getStringCellValue().isEmpty())
+            {
+              realColumnCount++;
+            }
+          }
+          catch (IllegalStateException ex)
+          {
+            //Probably numeric cell ... -> skip
+          }
+
         }
+        firstFilledRowIndex++;
+      }
+      if (realColumnCount == 0)
+      {
+        System.out.println("Could not determine real column count from xls. "
+                + "Cannot create label file.");
+        return;
       }
 
       labelArray = new String[realRowCount][realColumnCount];
@@ -134,7 +154,17 @@ public class LabelProcessor
           realColumnIndex++;
 
           HSSFCell cell = hssfRow.getCell(j);
-          String stringCellValue = cell == null ? "" : cell.getStringCellValue();
+          String stringCellValue;
+          try
+          {
+            stringCellValue = cell == null ? "" : cell.getStringCellValue();
+          }
+          catch(IllegalStateException ex)
+          {
+            //Probably numeric cell ... -> skip
+            stringCellValue = "";
+          }
+          
 
           if (stringCellValue.isEmpty())
           {
@@ -268,10 +298,10 @@ public class LabelProcessor
 
   public LabelInformation readTxtLabelFile(int digitKey)
   {
-    return readTxtLabelFile(DefaultConfigValues.FILE_PATH_LABEL, 
+    return readTxtLabelFile(DefaultConfigValues.FILE_PATH_LABEL,
             digitKey + "-label.txt");
   }
-  
+
   public LabelInformation readTxtLabelFile(String pathName, String labelName)
   {
     try
