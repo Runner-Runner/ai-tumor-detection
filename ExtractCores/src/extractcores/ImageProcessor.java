@@ -18,6 +18,19 @@ import javax.imageio.stream.ImageInputStream;
  */
 public class ImageProcessor
 {
+  public BufferedImage extractDownsampledRegion(String filePath, 
+          String imageName, int x, int y, int width, int height, int sampleFactor)
+  {
+    ImageReader reader = getImageReader(filePath, imageName);
+    ImageReadParam param = reader.getDefaultReadParam();
+
+    Rectangle sourceRegion = new Rectangle(x, y, width, height);
+    param.setSourceRegion(sourceRegion);
+    param.setSourceSubsampling(sampleFactor, sampleFactor, 0, 0);
+    
+    return readImage(reader, param, 0);
+  }
+  
   public BufferedImage extractRegion(String filePath, String imageName, int x, int y, int width, int height)
   {
     ImageReader reader = getImageReader(filePath, imageName);

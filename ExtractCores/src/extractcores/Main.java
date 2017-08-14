@@ -10,6 +10,7 @@ public class Main
   public static void main(String[] args) throws IOException
   {
     processImages();
+//    createDownsampledRegion(6155, 788, 4, 220, 220, null);
   }
 
   public static void processImages()
@@ -37,9 +38,9 @@ public class Main
 
   public static void processImage(int digitKey)
   {
-    createDownsampleImage(digitKey);
-    createEdgeImage(digitKey);
-    createLabelFile(digitKey);
+//    createDownsampleImage(digitKey);
+//    createEdgeImage(digitKey);
+//    createLabelFile(digitKey);
     findCores(digitKey);
   }
 
@@ -62,15 +63,40 @@ public class Main
     System.out.println(digitKey + ": Created edge image.");
   }
 
+  public static void createDownsampledRegion(int digitKey, int x, int y, int width, int height, Integer downsampleFactor)
+  {
+    //Assuming factor 50, default re-downsample = 11.
+    if (downsampleFactor == null)
+    {
+      downsampleFactor = 11;
+    }
+
+    x *= 50;
+    y *= 50;
+    width *= 50;
+    height *= 50;
+    System.out.println("Extracting region: x=" + x + ", y=" + y + ", width="
+            + width + ", height=" + height + ". Digitkey = " + digitKey);
+
+    ImageProcessor imageProcessor = new ImageProcessor();
+    BufferedImage regionImage = imageProcessor.extractDownsampledRegion(
+            "E:\\HE_TMA\\", digitKey + ".svs",
+            x, y, width, height,
+            downsampleFactor);
+    imageProcessor.writeImage(regionImage, DefaultConfigValues.FILE_PATH_INFORMATIVE,
+            digitKey + "-r" + x + "_" + y + "_" + width + "_" + height + ".png");
+    System.out.println(digitKey + ": Extracted region image.");
+  }
+
   public static void createDownsampleImage(int digitKey)
   {
-    File svsFile = new File(DefaultConfigValues.FILE_PATH_DOWNSAMPLE + 
-            digitKey + "-ds.png");
-    if(svsFile.exists())
+    File svsFile = new File(DefaultConfigValues.FILE_PATH_DOWNSAMPLE
+            + digitKey + "-ds.png");
+    if (svsFile.exists())
     {
       return;
     }
-    
+
     ImageProcessor imageProcessor = new ImageProcessor();
     BufferedImage dsImage = imageProcessor.downsampleImage(
             "E:\\HE_TMA\\", digitKey + ".svs",

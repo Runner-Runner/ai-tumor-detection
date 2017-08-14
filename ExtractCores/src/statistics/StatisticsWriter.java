@@ -22,6 +22,8 @@ public class StatisticsWriter
   private int gaps;
   private int totalCores;
   private int totalGaps;
+  private int totalTumorCores;
+  private int totalNormalCores;
   private int imageWidth;
   private int imageHeight;
   private int avgCoreWidth;
@@ -60,6 +62,8 @@ public class StatisticsWriter
       columns += labelInformation.getColumnCount();
       totalCores += labelInformation.getCoreCount();
       totalGaps += labelInformation.getGapCount();
+      totalTumorCores += labelInformation.getTumorCount();
+      totalNormalCores += labelInformation.getNormalCount();
       imageWidth += statistic.getImageWidth();
       imageHeight += statistic.getImageHeight();
       avgCoreWidth += statistic.getAvgCoreWidth();
@@ -111,6 +115,8 @@ public class StatisticsWriter
       writer.write("Avg. image height: " + imageHeight + "\n");
       writer.write("Avg. core width: " + avgCoreWidth + "\n");
       writer.write("Avg. core height: " + avgCoreHeight + "\n");
+      writer.write("Total nr. of tumor cores: " + totalTumorCores + "\n");
+      writer.write("Total nr. of normal cores: " + totalNormalCores + "\n");
 
       writer.write("Statistics per image file:\n");
       for (Statistic statistic : statistics)
