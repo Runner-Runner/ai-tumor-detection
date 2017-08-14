@@ -1,16 +1,21 @@
 package extractcores;
 
+import static extractcores.DefaultConfigValues.DOWNSAMPLE_FACTOR;
+import static extractcores.DefaultConfigValues.FILE_PATH_IMAGE_DRIVE;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.List;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReadParam;
 import javax.imageio.ImageReader;
 import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.stream.ImageInputStream;
+import static javax.swing.Spring.height;
+import static javax.swing.Spring.width;
 
 /**
  *
@@ -18,7 +23,7 @@ import javax.imageio.stream.ImageInputStream;
  */
 public class ImageProcessor
 {
-  public BufferedImage extractDownsampledRegion(String filePath, 
+  public BufferedImage extractDownsampledRegion(String filePath,
           String imageName, int x, int y, int width, int height, int sampleFactor)
   {
     ImageReader reader = getImageReader(filePath, imageName);
@@ -27,11 +32,12 @@ public class ImageProcessor
     Rectangle sourceRegion = new Rectangle(x, y, width, height);
     param.setSourceRegion(sourceRegion);
     param.setSourceSubsampling(sampleFactor, sampleFactor, 0, 0);
-    
+
     return readImage(reader, param, 0);
   }
-  
-  public BufferedImage extractRegion(String filePath, String imageName, int x, int y, int width, int height)
+
+  public BufferedImage extractRegion(String filePath, String imageName, int x,
+          int y, int width, int height)
   {
     ImageReader reader = getImageReader(filePath, imageName);
     ImageReadParam param = reader.getDefaultReadParam();
@@ -40,6 +46,72 @@ public class ImageProcessor
     param.setSourceRegion(sourceRegion);
 
     return readImage(reader, param, 0);
+  }
+
+  public void extractCoreRegions(int digitKey, List<TissueCore> labeledCores)
+  {
+    ImageProcessor imageProcessor = new ImageProcessor();
+    ImageReader reader = getImageReader(FILE_PATH_IMAGE_DRIVE, digitKey + ".svs");
+    ImageReadParam param = reader.getDefaultReadParam();
+
+    int backupCounter = 1;
+
+    int size = labeledCores.size();
+    for (int i=0; i<size; i++)
+    {
+      TissueCore core = labeledCores.get(i);
+      
+      CoreLabel label = core.getLabel();
+
+      if (label != CoreLabel.TUMOR && label != CoreLabel.NORMAL)
+      {
+        continue;
+      }
+
+      Rectangle coreBoundingBox = core.getBoundingBox();
+      coreBoundingBox.x *= DOWNSAMPLE_FACTOR;
+      coreBoundingBox.y *= DOWNSAMPLE_FACTOR;
+      coreBoundingBox.width *= DOWNSAMPLE_FACTOR;
+      coreBoundingBox.height *= DOWNSAMPLE_FACTOR;
+
+      try
+      {
+        param.setSourceRegion(coreBoundingBox);
+
+        BufferedImage regionImage = readImage(reader, param, 0);
+
+        String trainingDataPath = DefaultConfigValues.FILE_PATH_IMAGE_DRIVE_OUTPUT 
+                + digitKey + "\\";
+        File dirFile = new File(trainingDataPath);
+        if(!dirFile.exists())
+        {
+          dirFile.mkdir();
+        }
+        
+        String idText;
+        int id = core.getId();
+        if (id == -1)
+        {
+          idText = "noID_" + backupCounter++;
+        }
+        else
+        {
+          idText = String.valueOf(id);
+        }
+        String coreFileName = label.name() + "_" + idText + ".png";
+        imageProcessor.writeImage(regionImage, trainingDataPath,
+                coreFileName + ".png");
+        
+        System.out.println("Wrote training data for digitKey=" + 
+                digitKey + ", core id=" + core.getId() + 
+                " (" + i + "/" + size + ").");
+      }
+      catch (IllegalStateException ex)
+      {
+        System.out.println("Error writing training data for digitKey=" + 
+                digitKey + ", core id=" + core.getId() + ".");
+      }
+    }
   }
 
   public BufferedImage downsampleImage(String filePath, String imageName,

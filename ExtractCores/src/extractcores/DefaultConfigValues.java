@@ -22,12 +22,12 @@ public interface DefaultConfigValues
   public static final String SAMPLE_LABEL = "5512-label.txt";
 
   public static final String FILE_PATH_IMAGE_DRIVE = "E:\\HE_TMA\\";
+  public static final String FILE_PATH_IMAGE_DRIVE_OUTPUT = "E:\\training data\\";
   public static final String ABS_SAMPLE_FULL_IMAGE_DRIVE
           = "E:\\HE_TMA\\5512.svs";
   
   //Configuration Values
-  public static final int DOWNSAMPLE_FACTOR_X = 50;
-  public static final int DOWNSAMPLE_FACTOR_Y = 50;
+  public static final int DOWNSAMPLE_FACTOR = 50;
   
   public static final int MIN_OBJECT_AREA = 100;
   public static final int MAX_OBJECT_AREA = 6750;

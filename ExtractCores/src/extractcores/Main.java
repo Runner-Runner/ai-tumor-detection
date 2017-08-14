@@ -1,16 +1,18 @@
 package extractcores;
 
+import static extractcores.DefaultConfigValues.FILE_PATH_IMAGE_DRIVE;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import statistics.StatisticsWriter;
 
 public class Main
 {
   public static void main(String[] args) throws IOException
   {
-    processImages();
-//    createDownsampledRegion(6155, 788, 4, 220, 220, null);
+//    processImages();
+    processImage(5512, false);
   }
 
   public static void processImages()
@@ -23,7 +25,7 @@ public class Main
       {
         int digitKey = Integer.parseInt(fileName.split("\\.")[0]);
         System.out.println("Processing digit key = " + digitKey + " ...");
-        processImage(digitKey);
+        processImage(digitKey, true);
         System.out.println("Processed digit key = " + digitKey + ".");
       }
       catch (Exception ex)
@@ -36,12 +38,12 @@ public class Main
     StatisticsWriter.getInstance().write();
   }
 
-  public static void processImage(int digitKey)
+  public static void processImage(int digitKey, boolean solutionDataExists)
   {
 //    createDownsampleImage(digitKey);
 //    createEdgeImage(digitKey);
 //    createLabelFile(digitKey);
-    findCores(digitKey);
+    findCores(digitKey, solutionDataExists);
   }
 
   public static void createLabelFile(int digitKey)
@@ -63,7 +65,8 @@ public class Main
     System.out.println(digitKey + ": Created edge image.");
   }
 
-  public static void createDownsampledRegion(int digitKey, int x, int y, int width, int height, Integer downsampleFactor)
+  public static void createDownsampledRegion(int digitKey, int x, int y, 
+          int width, int height, Integer downsampleFactor)
   {
     //Assuming factor 50, default re-downsample = 11.
     if (downsampleFactor == null)
@@ -80,7 +83,7 @@ public class Main
 
     ImageProcessor imageProcessor = new ImageProcessor();
     BufferedImage regionImage = imageProcessor.extractDownsampledRegion(
-            "E:\\HE_TMA\\", digitKey + ".svs",
+            FILE_PATH_IMAGE_DRIVE, digitKey + ".svs",
             x, y, width, height,
             downsampleFactor);
     imageProcessor.writeImage(regionImage, DefaultConfigValues.FILE_PATH_INFORMATIVE,
@@ -100,24 +103,29 @@ public class Main
     ImageProcessor imageProcessor = new ImageProcessor();
     BufferedImage dsImage = imageProcessor.downsampleImage(
             "E:\\HE_TMA\\", digitKey + ".svs",
-            DefaultConfigValues.DOWNSAMPLE_FACTOR_X,
-            DefaultConfigValues.DOWNSAMPLE_FACTOR_Y);
+            DefaultConfigValues.DOWNSAMPLE_FACTOR,
+            DefaultConfigValues.DOWNSAMPLE_FACTOR);
     imageProcessor.writeImage(dsImage, DefaultConfigValues.FILE_PATH_DOWNSAMPLE,
             digitKey + "-ds.png");
     System.out.println(digitKey + ": Created downsampled image.");
   }
 
-  public static void findCores(int digitKey)
+  public static void findCores(int digitKey, boolean solutionDataExists)
   {
     ImageProcessor imageProcessor = new ImageProcessor();
 
     BufferedImage edgeImage = imageProcessor.readImage(
             DefaultConfigValues.FILE_PATH_EDGE, digitKey + "-edge.png");
 
-    CoreExtractor coreExtractor = new CoreExtractor();
-    coreExtractor.findCores(DefaultConfigValues.FILE_PATH_EDGE,
+    CoreExtractor coreExtractor = new CoreExtractor(solutionDataExists);
+    List<TissueCore> labeledCores = coreExtractor.retrieveLabeledCores(
+            DefaultConfigValues.FILE_PATH_EDGE,
             digitKey + "-edge.png", digitKey + "-label.txt", digitKey);
-    System.out.println(digitKey + ": Cores processed.");
+    System.out.println(digitKey + ": Cores detected and assigned.");
+    
+    System.out.println("Writing training data ...");
+    coreExtractor.writeTrainingSamples(labeledCores, digitKey);
+    System.out.println("Done writing training data.");
   }
 
   public static void createLabelIdentifyingImages()
@@ -170,8 +178,8 @@ public class Main
       {
         BufferedImage downsampleImage = imageProcessor.downsampleImage(
                 DefaultConfigValues.FILE_PATH_IMAGE_DRIVE, fileName,
-                DefaultConfigValues.DOWNSAMPLE_FACTOR_X,
-                DefaultConfigValues.DOWNSAMPLE_FACTOR_Y);
+                DefaultConfigValues.DOWNSAMPLE_FACTOR,
+                DefaultConfigValues.DOWNSAMPLE_FACTOR);
         String[] split = fileName.split("\\.");
         imageProcessor.writeImage(downsampleImage,
                 DefaultConfigValues.FILE_PATH_IMAGE_DRIVE, split[0] + "-ds.png");

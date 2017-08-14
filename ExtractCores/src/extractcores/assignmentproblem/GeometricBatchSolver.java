@@ -353,15 +353,9 @@ public class GeometricBatchSolver extends AssignmentSolver
   }
 
   @Override
-  public List<TissueCore> createLabeledCores()
-  {
-    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-  }
-
-  @Override
   protected void createAssignmentInformation()
   {
-
+    //Done in createBatchInformation
   }
 
   protected void createBatchInformation(int rowIndex, List<TissueCore> batchCores,

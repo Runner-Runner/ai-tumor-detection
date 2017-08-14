@@ -45,6 +45,10 @@ public class TissueCore
 
   public int getId()
   {
+    if(ids == null)
+    {
+      return -1;
+    }
     return ids[0];
   }
   

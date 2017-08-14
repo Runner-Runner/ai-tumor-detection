@@ -1,6 +1,7 @@
 package extractcores;
 
 import static extractcores.DefaultConfigValues.EXTREME_CORE_RATIO_THRESHOLD;
+import static extractcores.DefaultConfigValues.FILE_PATH_IMAGE_DRIVE;
 import static extractcores.DefaultConfigValues.LARGE_CORE_AREA_THRESHOLD;
 import static extractcores.DefaultConfigValues.MAX_OBJECT_AREA;
 import static extractcores.DefaultConfigValues.MIN_OBJECT_AREA;
@@ -32,11 +33,13 @@ public class CoreExtractor
 {
   private List<int[]> mergedIds;
   private AssignmentInformation solutionAssignmentInformation;
+  private boolean solutionDataExists;
 
-  public CoreExtractor()
+  public CoreExtractor(boolean solutionDataExists)
   {
-    System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
+    this.solutionDataExists = solutionDataExists;
     mergedIds = new ArrayList<>();
+    System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
   }
 
   public void readSolution(int digitKey)
@@ -44,9 +47,19 @@ public class CoreExtractor
     ManualSolutionReader solutionReader = new ManualSolutionReader();
     solutionAssignmentInformation = solutionReader.
             readSolution(digitKey);
+    if (solutionAssignmentInformation == null)
+    {
+      solutionDataExists = false;
+    }
   }
 
-  public List<TissueCore> findCores(String pathName, String edgeFileName,
+  public void writeTrainingSamples(List<TissueCore> labeledCores, int digitKey)
+  {
+    ImageProcessor imageProcessor = new ImageProcessor();
+    imageProcessor.extractCoreRegions(digitKey, labeledCores);
+  }
+
+  public List<TissueCore> retrieveLabeledCores(String pathName, String edgeFileName,
           String labelFileName, int digitKey)
   {
     LabelProcessor labelProcessor = new LabelProcessor();
@@ -59,11 +72,8 @@ public class CoreExtractor
     List<TissueCore> cores = detectCores(pathName, edgeFileName,
             labelInformation, edgeImage, digitKey);
 
-    List<TissueCore> labeledCores = null;
-    
-    ///Out for testing
-//    List<TissueCore> labeledCores = assignLabels(labelInformation, cores,
-//            edgeFileName, digitKey);
+    List<TissueCore> labeledCores = assignLabels(labelInformation, cores,
+            edgeFileName, digitKey);
 
     return labeledCores;
   }
@@ -118,18 +128,18 @@ public class CoreExtractor
             + String.format("%.2f", coreDetectionPercentage) + "%. "
             + missingCoreCount + coreMessage);
     createCoreInformation(edgeImage, allCores, mergedCores, edgeFileName);
-    
+
     Statistic statistic = new Statistic();
     statistic.setDigitKey(digitKey);
     statistic.setLabelInformation(labelInformation);
     statistic.setImageWidth(edgeImage.getWidth());
     statistic.setImageHeight(edgeImage.getHeight());
-    for(TissueCore core : mergedCores)
+    for (TissueCore core : mergedCores)
     {
       statistic.addCoreWidth(core.getBoundingBox().width);
       statistic.addCoreHeight(core.getBoundingBox().height);
     }
-    
+
     StatisticsWriter.getInstance().addStatistic(statistic);
     return mergedCores;
   }
@@ -202,32 +212,38 @@ public class CoreExtractor
   private List<TissueCore> assignLabels(LabelInformation labelInformation,
           List<TissueCore> cores, String edgeFileName, int digitKey)
   {
-    readSolution(digitKey);
-
-    System.out.println("Performance Core Merging:");
-    outputMergePerformance(digitKey, labelInformation);
-
-    if (1 == 1)
+    if (solutionDataExists)
     {
-      return null;
+      readSolution(digitKey);
+      
+      System.out.println("Performance Core Merging:");
+      outputMergePerformance(digitKey, labelInformation);
     }
 
     SimpleGridSolver simpleSolver = new SimpleGridSolver(cores, labelInformation,
             edgeFileName);
     simpleSolver.assignCores();
-    System.out.println("Performance SimpleGridSolver:");
-    outputAssignmentPerformance(digitKey, labelInformation,
-            simpleSolver.getAssignmentInformation());
+
+    if (solutionDataExists)
+    {
+      System.out.println("Performance SimpleGridSolver:");
+      outputAssignmentPerformance(digitKey, labelInformation,
+              simpleSolver.getAssignmentInformation());
+    }
 
     GeometricBatchSolver solver = new GeometricBatchSolver(
             cores, labelInformation, edgeFileName);
     solver.assignCores();
     AssignmentInformation assignmentInformation = solver.getAssignmentInformation();
 
-    System.out.println("Performance GeometricBatchSolver:");
-    outputAssignmentPerformance(digitKey, labelInformation, assignmentInformation);
+    if (solutionDataExists)
+    {
+      System.out.println("Performance GeometricBatchSolver:");
+      outputAssignmentPerformance(digitKey, labelInformation, assignmentInformation);
+    }
 
-    return null;
+    List<TissueCore> labeledCores = solver.createLabeledCores();
+    return labeledCores;
   }
 
   public void outputMergePerformance(int digitKey, LabelInformation labelInformation)
@@ -235,7 +251,6 @@ public class CoreExtractor
     //Merge results
     int solutionMergeCount = 0;
     int correctMergeCount = 0;
-    List<int[]> solutionMergedIds = new ArrayList<>();
     List<int[]> unusedMergedIds = new ArrayList<>();
     unusedMergedIds.addAll(mergedIds);
 

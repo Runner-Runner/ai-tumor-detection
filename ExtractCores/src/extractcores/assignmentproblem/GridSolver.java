@@ -6,7 +6,6 @@ import static extractcores.CoreComparator.CompareType.HORIZONTAL_RIGHT;
 import static extractcores.CoreComparator.CompareType.VERTICAL_BOTTOM;
 import static extractcores.CoreComparator.CompareType.VERTICAL_CENTER;
 import static extractcores.CoreComparator.CompareType.VERTICAL_UP;
-import extractcores.CoreLabel;
 import extractcores.DefaultConfigValues;
 import extractcores.ImageProcessor;
 import static extractcores.ImageProcessor.appendFilename;
@@ -125,30 +124,6 @@ public abstract class GridSolver extends AssignmentSolver
       }
     }
     return inputMatrix;
-  }
-
-  @Override
-  public List<TissueCore> createLabeledCores()
-  {
-    for (int r = 0; r < labelInformation.getRowCount(); r++)
-    {
-      for (int c = 0; c < labelInformation.getColumnCount(); c++)
-      {
-        Assignment assignment = assignmentInformation.getAssignment(r, c);
-        if (assignment != null)
-        {
-          TissueCore core = assignment.getCore();
-          CoreLabel coreLabel = labelInformation.getCoreLabel(r, c);
-          if (coreLabel != null)
-          {
-            core.setLabel(coreLabel);
-            System.out.println("Label [" + r + "/" + c + "] = "
-                    + coreLabel.name() + "assigned to Core #" + core.getId());
-          }
-        }
-      }
-    }
-    return cores;
   }
 
   protected void calculateGridData()
