@@ -40,8 +40,8 @@ public abstract class AssignmentSolver
           if (coreLabel != null)
           {
             core.setLabel(coreLabel);
-            System.out.println("Label [" + r + "/" + c + "] = "
-                    + coreLabel.name() + "assigned to Core #" + core.getId());
+//            System.out.println("Label [" + r + "/" + c + "] = "
+//                    + coreLabel.name() + " assigned to Core #" + core.getId());
           }
         }
       }

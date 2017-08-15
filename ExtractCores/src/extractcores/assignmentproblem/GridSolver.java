@@ -61,13 +61,9 @@ public abstract class GridSolver extends AssignmentSolver
     double radiusWidth = intervalWidth / 2;
     double radiusHeight = intervalHeight / 2;
 
-    g.setColor(Color.RED);
-    Stroke dashed = new BasicStroke(3, BasicStroke.CAP_BUTT,
-            BasicStroke.JOIN_BEVEL, 0, new float[]
-            {
-              9
-            }, 0);
-    g.setStroke(dashed);
+    g.setColor(Color.GREEN);
+    Stroke stroke = new BasicStroke(3);
+    g.setStroke(stroke);
 
     for (int r = 0; r < labelInformation.getRowCount(); r++)
     {
@@ -81,7 +77,7 @@ public abstract class GridSolver extends AssignmentSolver
           int cellCenterX = (int) (minX + c * intervalWidth + radiusWidth);
           int cellCenterY = (int) (minY + r * intervalHeight + radiusHeight);
 
-          g.drawLine(core.getCenterX(), core.getCenterY(), cellCenterX, cellCenterY);
+//          g.drawLine(core.getCenterX(), core.getCenterY(), cellCenterX, cellCenterY);
         }
       }
     }

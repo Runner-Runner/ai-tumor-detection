@@ -51,6 +51,10 @@ public class CoreExtractor
     {
       solutionDataExists = false;
     }
+    else
+    {
+      StatisticsWriter.getInstance().addSolution(solutionAssignmentInformation);
+    }
   }
 
   public void writeTrainingSamples(List<TissueCore> labeledCores, int digitKey)
@@ -121,6 +125,8 @@ public class CoreExtractor
       missingCoreCount *= -1;
       coreMessage = " redundant cores were found.";
     }
+    
+    StatisticsWriter.getInstance().addDetectionStats(foundCoreCount);
     double coreDetectionPercentage
             = Double.valueOf(foundCoreCount)
             / coreCount * 100;
@@ -215,7 +221,7 @@ public class CoreExtractor
     if (solutionDataExists)
     {
       readSolution(digitKey);
-      
+
       System.out.println("Performance Core Merging:");
       outputMergePerformance(digitKey, labelInformation);
     }
@@ -228,7 +234,7 @@ public class CoreExtractor
     {
       System.out.println("Performance SimpleGridSolver:");
       outputAssignmentPerformance(digitKey, labelInformation,
-              simpleSolver.getAssignmentInformation());
+              simpleSolver.getAssignmentInformation(), true);
     }
 
     GeometricBatchSolver solver = new GeometricBatchSolver(
@@ -239,7 +245,8 @@ public class CoreExtractor
     if (solutionDataExists)
     {
       System.out.println("Performance GeometricBatchSolver:");
-      outputAssignmentPerformance(digitKey, labelInformation, assignmentInformation);
+      outputAssignmentPerformance(digitKey, labelInformation, 
+              assignmentInformation, false);
     }
 
     List<TissueCore> labeledCores = solver.createLabeledCores();
@@ -301,6 +308,9 @@ public class CoreExtractor
         }
       }
     }
+    
+    StatisticsWriter.getInstance().addMergeStats(correctMergeCount, solutionMergeCount);
+    
     double mergePercent = Double.valueOf(correctMergeCount) / solutionMergeCount * 100;
     System.out.println("Correctly merged: " + correctMergeCount + "/"
             + solutionMergeCount + ", "
@@ -316,11 +326,12 @@ public class CoreExtractor
       {
         System.out.print(Arrays.toString(unusedId) + " ; ");
       }
+      System.out.println("");
     }
   }
 
   public void outputAssignmentPerformance(int digitKey, LabelInformation labelInformation,
-          AssignmentInformation assignmentInformation)
+          AssignmentInformation assignmentInformation, boolean isGrid)
   {
     //Assignment results
     int cellCount = labelInformation.getRowCount()
@@ -329,10 +340,10 @@ public class CoreExtractor
     int solutionCoreCount = 0;
     int solutionGapCount = 0;
 
-    int correctCoreCount = 0;
-    int correctGapCount = 0;
+    int correctAssignCoreCount = 0;
+    int correctAssignGapCount = 0;
 
-    System.out.println("Core assignment results for #" + digitKey + ":");
+//    System.out.println("Core assignment results for #" + digitKey + ":");
 
     for (int i = 0; i < labelInformation.getRowCount(); i++)
     {
@@ -346,7 +357,7 @@ public class CoreExtractor
 
         if (assignment == null && solutionAssignment == null)
         {
-          correctGapCount++;
+          correctAssignGapCount++;
           solutionGapCount++;
           System.out.print("Found correct gap.");
         }
@@ -380,43 +391,51 @@ public class CoreExtractor
             }
             if (identical)
             {
-              System.out.print("Correct assignment: ids = [" + Arrays.toString(ids)
-                      + "].");
-              correctCoreCount++;
+//              System.out.print("Correct assignment: ids = [" + Arrays.toString(ids)
+//                      + "].");
+              correctAssignCoreCount++;
             }
             else
             {
-              System.out.print("Wrong ID: assigned [" + ids[0]
-                      + "], actually [" + solutionIds[0] + "].");
+//              System.out.print("Wrong ID: assigned [" + ids[0]
+//                      + "], actually [" + solutionIds[0] + "].");
             }
           }
         }
         else if (assignment == null && solutionAssignment != null)
         {
           solutionCoreCount++;
-          System.out.print("Missing core: ID = " + Arrays.toString(
-                  solutionAssignment.getCore().getIds()) + ".");
+//          System.out.print("Missing core: ID = " + Arrays.toString(
+//                  solutionAssignment.getCore().getIds()) + ".");
         }
         else if (assignment != null && solutionAssignment == null)
         {
           solutionGapCount++;
-          System.out.print("Assigned core into gap: ID = " + Arrays.toString(
-                  assignment.getCore().getIds()) + ".");
+//          System.out.print("Assigned core into gap: ID = " + Arrays.toString(
+//                  assignment.getCore().getIds()) + ".");
         }
-        System.out.println("");
+//        System.out.println("");
       }
     }
 
-    double correctCorePercent = Double.valueOf(correctCoreCount) / solutionCoreCount * 100;
-    double correctGapPercent = Double.valueOf(correctGapCount) / solutionGapCount * 100;
+    if(isGrid)
+    {
+      StatisticsWriter.getInstance().addAssignStats(solutionCoreCount, solutionGapCount);
+    }
+    
+    StatisticsWriter.getInstance().addAssignStats(
+            correctAssignCoreCount, correctAssignGapCount, isGrid);
+    
+    double correctCorePercent = Double.valueOf(correctAssignCoreCount) / solutionCoreCount * 100;
+    double correctGapPercent = Double.valueOf(correctAssignGapCount) / solutionGapCount * 100;
     double totalPercent = Double.valueOf(
-            correctCoreCount + correctGapCount) / cellCount * 100;
+            correctAssignCoreCount + correctAssignGapCount) / cellCount * 100;
     System.out.println("Total Results:");
 
-    System.out.println("Correct cores: " + correctCoreCount + "/"
+    System.out.println("Correct cores: " + correctAssignCoreCount + "/"
             + solutionCoreCount + ", "
             + String.format("%.2f", correctCorePercent) + "%.");
-    System.out.println("Correct gaps: " + correctGapCount + "/"
+    System.out.println("Correct gaps: " + correctAssignGapCount + "/"
             + solutionGapCount + ", "
             + String.format("%.2f", correctGapPercent) + "%.");
     System.out.println("Overall performance: " + String.format("%.2f", totalPercent) + "%.");
@@ -518,14 +537,14 @@ public class CoreExtractor
     Graphics g = foundObjectsImage.getGraphics();
     g.drawImage(edgeImage, 0, 0, null);
 
-//    g.setColor(Color.red);
-//    for (TissueCore core : allCores)
-//    {
-//      if (!mergedCores.contains(core))
-//      {
-//        drawBoundingBox(g, core);
-//      }
-//    }
+    g.setColor(Color.red);
+    for (TissueCore core : allCores)
+    {
+      if (!mergedCores.contains(core))
+      {
+        drawBoundingBox(g, core, null);
+      }
+    }
     g.setColor(Color.green);
     for (int i = 0; i < mergedCores.size(); i++)
     {
@@ -539,26 +558,29 @@ public class CoreExtractor
             ImageProcessor.appendFilename(edgeFileName, "info", "png"));
   }
 
-  private void drawBoundingBox(Graphics g, TissueCore core, int index)
+  private void drawBoundingBox(Graphics g, TissueCore core, Integer index)
   {
     Rectangle boundingBox = core.getBoundingBox();
     g.drawRect(boundingBox.x, boundingBox.y,
             boundingBox.width, boundingBox.height);
 
-    String indexString = String.valueOf(index);
-    int x = boundingBox.x + boundingBox.width - 20;
-    int y = boundingBox.y + boundingBox.height - 20;
+    if (index != null)
+    {
+      String indexString = String.valueOf(index);
+      int x = boundingBox.x + boundingBox.width - 20;
+      int y = boundingBox.y + boundingBox.height - 20;
 
-    FontMetrics fm = g.getFontMetrics();
-    Rectangle2D rect = fm.getStringBounds(indexString, g);
+      FontMetrics fm = g.getFontMetrics();
+      Rectangle2D rect = fm.getStringBounds(indexString, g);
 
-    g.setColor(Color.DARK_GRAY);
-    g.fillRect(x,
-            y - fm.getAscent(),
-            (int) rect.getWidth(),
-            (int) rect.getHeight());
-    g.setColor(Color.GREEN);
-    g.drawString(indexString, x, y);
+      g.setColor(Color.DARK_GRAY);
+      g.fillRect(x,
+              y - fm.getAscent(),
+              (int) rect.getWidth(),
+              (int) rect.getHeight());
+      g.setColor(Color.GREEN);
+      g.drawString(indexString, x, y);
+    }
   }
 
   private class Distance implements Comparable<Distance>

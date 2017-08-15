@@ -10,6 +10,7 @@ public interface DefaultConfigValues
   public static final String FILE_PATH_LABEL = FILE_BASE_PATH + "labels\\";
   public static final String FILE_PATH_LABEL_SOLUTION = FILE_BASE_PATH + "labels\\solution\\";
   public static final String FILE_PATH_INFORMATIVE = FILE_BASE_PATH + "informative\\";
+  public static final String FILE_PATH_INFORMATIVE_BATCHES = FILE_BASE_PATH + "informative\\batches\\";
   public static final String FILE_PATH_INPUT_SEGMENTS = FILE_BASE_PATH + "input images\\";
 
   public static final String STATISTICS_FILE_NAME = "statistics";

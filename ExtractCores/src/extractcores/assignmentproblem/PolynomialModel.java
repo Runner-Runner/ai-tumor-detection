@@ -165,10 +165,6 @@ public class PolynomialModel extends GeometricModel
     for (int i = 0; i < assignedCores.size(); i++)
     {
       TissueCore core = assignedCores.get(i);
-      if (core.getId() == 242)
-      {
-        int a = 3;
-      }
 
       distanceMean += distances[i] = getDistance(core);
     }

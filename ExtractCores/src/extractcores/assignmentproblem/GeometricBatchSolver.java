@@ -96,12 +96,6 @@ public class GeometricBatchSolver extends AssignmentSolver
       for (int i = 0; i < copyCores.size(); i++)
       {
         TissueCore core = copyCores.get(i);
-        ///
-        if (core.getId() == 205)
-        {
-          int a = 3;
-        }
-        ///
         if (rowIndex != 0)
         {
           yBound = boundModel.getY(core.getCenterX());
@@ -243,12 +237,6 @@ public class GeometricBatchSolver extends AssignmentSolver
       GeometricModel model2 = geometricModels[modelIndex + 1];
 
       TissueCore core = batchCores.get(i);
-      ///
-      if (core.getId() == 219)
-      {
-        int a = 3;
-      }
-      ///
       int distanceModel1 = (int) model1.getDistance(core);
       int distanceModel2 = (int) model2.getDistance(core);
 
@@ -441,7 +429,7 @@ public class GeometricBatchSolver extends AssignmentSolver
       postfix = "-boundary";
     }
     imageProcessor.writeImage(edgeImage,
-            DefaultConfigValues.FILE_PATH_INFORMATIVE,
+            DefaultConfigValues.FILE_PATH_INFORMATIVE_BATCHES,
             appendFilename(edgeFileName, "batch-r" + rowIndex + "-"
                     + (rowIndex + 1) + postfix, "png"));
   }

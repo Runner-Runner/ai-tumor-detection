@@ -11,8 +11,8 @@ public class Main
 {
   public static void main(String[] args) throws IOException
   {
-//    processImages();
-    processImage(5512, false);
+    processImages();
+//    processImage(5512, false);
   }
 
   public static void processImages()
@@ -43,7 +43,7 @@ public class Main
 //    createDownsampleImage(digitKey);
 //    createEdgeImage(digitKey);
 //    createLabelFile(digitKey);
-    findCores(digitKey, solutionDataExists);
+    findCores(digitKey, solutionDataExists, false);
   }
 
   public static void createLabelFile(int digitKey)
@@ -65,7 +65,7 @@ public class Main
     System.out.println(digitKey + ": Created edge image.");
   }
 
-  public static void createDownsampledRegion(int digitKey, int x, int y, 
+  public static void createDownsampledRegion(int digitKey, int x, int y,
           int width, int height, Integer downsampleFactor)
   {
     //Assuming factor 50, default re-downsample = 11.
@@ -110,7 +110,8 @@ public class Main
     System.out.println(digitKey + ": Created downsampled image.");
   }
 
-  public static void findCores(int digitKey, boolean solutionDataExists)
+  public static void findCores(int digitKey, boolean solutionDataExists, 
+          boolean writeTrainingSamples)
   {
     ImageProcessor imageProcessor = new ImageProcessor();
 
@@ -122,10 +123,13 @@ public class Main
             DefaultConfigValues.FILE_PATH_EDGE,
             digitKey + "-edge.png", digitKey + "-label.txt", digitKey);
     System.out.println(digitKey + ": Cores detected and assigned.");
-    
-    System.out.println("Writing training data ...");
-    coreExtractor.writeTrainingSamples(labeledCores, digitKey);
-    System.out.println("Done writing training data.");
+
+    if (writeTrainingSamples)
+    {
+      System.out.println("Writing training data ...");
+      coreExtractor.writeTrainingSamples(labeledCores, digitKey);
+      System.out.println("Done writing training data.");
+    }
   }
 
   public static void createLabelIdentifyingImages()

@@ -3,6 +3,7 @@ package statistics;
 import static extractcores.DefaultConfigValues.FILE_PATH_INFORMATIVE;
 import static extractcores.DefaultConfigValues.STATISTICS_FILE_NAME;
 import extractcores.LabelInformation;
+import extractcores.assignmentproblem.AssignmentInformation;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -15,6 +16,8 @@ public class StatisticsWriter
   private static StatisticsWriter statisticsWriter;
 
   private List<Statistic> statistics;
+
+  private List<AssignmentInformation> solutionAssignmentList;
 
   private int rows;
   private int columns;
@@ -29,9 +32,23 @@ public class StatisticsWriter
   private int avgCoreWidth;
   private int avgCoreHeight;
 
+  private int solutionTotalCoreCount = 0;
+  private int detectedCoreCount = 0;
+
+  private int solutionMergeCount = 0;
+  private int correctMergeCount = 0;
+
+  private int correctAssignCoreCountGrid = 0;
+  private int correctAssignCoreCountCurve = 0;
+  private int solutionCoreCount = 0;
+  private int correctAssignGapCountGrid = 0;
+  private int correctAssignGapCountCurve = 0;
+  private int solutionGapCount = 0;
+
   private StatisticsWriter()
   {
     statistics = new ArrayList<>();
+    solutionAssignmentList = new ArrayList<>();
   }
 
   public static StatisticsWriter getInstance()
@@ -46,6 +63,43 @@ public class StatisticsWriter
   public void addStatistic(Statistic statistic)
   {
     statistics.add(statistic);
+  }
+
+  public void addSolution(AssignmentInformation assignmentInformation)
+  {
+    solutionAssignmentList.add(assignmentInformation);
+  }
+
+  public void addDetectionStats(int detectedCoreCount)
+  {
+    this.detectedCoreCount += detectedCoreCount;
+  }
+  
+  public void addMergeStats(int correctMergeCount, int solutionMergeCount)
+  {
+    this.correctMergeCount += correctMergeCount;
+    this.solutionMergeCount += solutionMergeCount;
+  }
+
+  public void addAssignStats(int solutionCoreCount, int solutionGapCount)
+  {
+    this.solutionCoreCount += solutionCoreCount;
+    this.solutionGapCount += solutionGapCount;
+  }
+
+  public void addAssignStats(int correctAssignCoreCount,
+          int correctAssignGapCount, boolean grid)
+  {
+    if (grid)
+    {
+      this.correctAssignCoreCountGrid += correctAssignCoreCount;
+      this.correctAssignGapCountGrid += correctAssignGapCount;
+    }
+    else
+    {
+      this.correctAssignCoreCountCurve += correctAssignCoreCount;
+      this.correctAssignGapCountCurve += correctAssignGapCount;
+    }
   }
 
   private void calculateAvg()
@@ -79,6 +133,12 @@ public class StatisticsWriter
     imageHeight /= caseCount;
     avgCoreWidth /= caseCount;
     avgCoreHeight /= caseCount;
+
+    //Process stored solutions
+    for (AssignmentInformation assignmentInformation : solutionAssignmentList)
+    {
+      solutionTotalCoreCount += assignmentInformation.getSize();
+    }
   }
 
   public void write()
@@ -116,7 +176,46 @@ public class StatisticsWriter
       writer.write("Avg. core width: " + avgCoreWidth + "\n");
       writer.write("Avg. core height: " + avgCoreHeight + "\n");
       writer.write("Total nr. of tumor cores: " + totalTumorCores + "\n");
-      writer.write("Total nr. of normal cores: " + totalNormalCores + "\n");
+      writer.write("Total nr. of normal cores: " + totalNormalCores + "\n\n");
+
+      double coreDetectionPercentage1
+              = Double.valueOf(detectedCoreCount) / totalCores * 100;
+      writer.write("Detected cores (by label files): " + detectedCoreCount
+              + "/" + totalCores
+              + ", " + String.format("%.2f", coreDetectionPercentage1) + "%.\n");
+      double coreDetectionPercentage2
+              = Double.valueOf(detectedCoreCount) / solutionTotalCoreCount * 100;
+      writer.write("Detected cores (by ground truth): " + detectedCoreCount
+              + "/" + solutionTotalCoreCount
+              + ", " + String.format("%.2f", coreDetectionPercentage2) + "%.\n");
+
+      double mergePercentage
+              = Double.valueOf(correctMergeCount) / solutionMergeCount * 100;
+      writer.write("Correctly merged cores: " + correctMergeCount
+              + "/" + solutionMergeCount
+              + ", " + String.format("%.2f", mergePercentage) + "%.\n");
+
+      double assignCorePercentageGrid
+              = Double.valueOf(correctAssignCoreCountGrid) / solutionCoreCount * 100;
+      writer.write("Grid: Correctly assigned cores (ID-checked): " + correctAssignCoreCountGrid
+              + "/" + solutionCoreCount
+              + ", " + String.format("%.2f", assignCorePercentageGrid) + "%.\n");
+      double assignCorePercentageCurve
+              = Double.valueOf(correctAssignCoreCountCurve) / solutionCoreCount * 100;
+      writer.write("Curve: Correctly assigned cores (ID-checked): " + correctAssignCoreCountCurve
+              + "/" + solutionCoreCount
+              + ", " + String.format("%.2f", assignCorePercentageCurve) + "%.\n");
+
+      double assignGapPercentageGrid
+              = Double.valueOf(correctAssignGapCountGrid) / solutionGapCount * 100;
+      writer.write("Grid: Correctly assigned gaps: " + correctAssignGapCountGrid
+              + "/" + solutionGapCount
+              + ", " + String.format("%.2f", assignGapPercentageGrid) + "%.\n");
+      double assignGapPercentageCurve
+              = Double.valueOf(correctAssignGapCountCurve) / solutionGapCount * 100;
+      writer.write("Curve: Correctly assigned gaps: " + correctAssignGapCountCurve
+              + "/" + solutionGapCount
+              + ", " + String.format("%.2f", assignGapPercentageCurve) + "%.\n");
 
       writer.write("Statistics per image file:\n");
       for (Statistic statistic : statistics)

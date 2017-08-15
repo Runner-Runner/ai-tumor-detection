@@ -7,8 +7,6 @@ import java.util.List;
 
 public class AssignmentInformation
 {
-  //TODO maybe store as list and as 2dim array (size 100x100) for access with better performance.
-  
   private List<Assignment> coreAssignments;
 
   public AssignmentInformation()
@@ -50,5 +48,10 @@ public class AssignmentInformation
       }
     }
     return null;
+  }
+  
+  public int getSize()
+  {
+    return coreAssignments.size();
   }
 }
