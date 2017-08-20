@@ -159,12 +159,11 @@ public class LabelProcessor
           {
             stringCellValue = cell == null ? "" : cell.getStringCellValue();
           }
-          catch(IllegalStateException ex)
+          catch (IllegalStateException ex)
           {
             //Probably numeric cell ... -> skip
             stringCellValue = "";
           }
-          
 
           if (stringCellValue.isEmpty())
           {
@@ -298,14 +297,10 @@ public class LabelProcessor
 
   public LabelInformation readTxtLabelFile(int digitKey)
   {
-    return readTxtLabelFile(DefaultConfigValues.FILE_PATH_LABEL,
-            digitKey + "-label.txt");
-  }
-
-  public LabelInformation readTxtLabelFile(String pathName, String labelName)
-  {
     try
     {
+      String pathName = DefaultConfigValues.FILE_PATH_LABEL;
+      String labelName = digitKey + "-label.txt";
       BufferedReader reader = new BufferedReader(new FileReader(pathName
               + labelName));
 
@@ -334,7 +329,7 @@ public class LabelProcessor
         i++;
       }
 
-      LabelInformation labelInformation = new LabelInformation(
+      LabelInformation labelInformation = new LabelInformation(digitKey,
               coreLabelArray, rows, columns, tumorCount, normalCount, gapCount);
       return labelInformation;
     }

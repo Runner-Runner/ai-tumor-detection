@@ -9,8 +9,9 @@ public class LabelInformation
   private int normalCount;
   private int gapCount;
   private int coreCount;
+  private int digitKey;
 
-  public LabelInformation(CoreLabel[][] coreLabelArray, int rowCount, 
+  public LabelInformation(int digitKey, CoreLabel[][] coreLabelArray, int rowCount, 
           int columnCount, int tumorCount, int normalCount, int gapCount)
   {
     this.coreLabelArray = coreLabelArray;
@@ -59,5 +60,10 @@ public class LabelInformation
   public int getCoreCount()
   {
     return coreCount;
+  }
+
+  public int getDigitKey()
+  {
+    return digitKey;
   }
 }

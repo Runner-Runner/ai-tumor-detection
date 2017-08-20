@@ -1,7 +1,6 @@
 package extractcores;
 
 import static extractcores.DefaultConfigValues.EXTREME_CORE_RATIO_THRESHOLD;
-import static extractcores.DefaultConfigValues.FILE_PATH_IMAGE_DRIVE;
 import static extractcores.DefaultConfigValues.LARGE_CORE_AREA_THRESHOLD;
 import static extractcores.DefaultConfigValues.MAX_OBJECT_AREA;
 import static extractcores.DefaultConfigValues.MIN_OBJECT_AREA;
@@ -67,12 +66,16 @@ public class CoreExtractor
           String labelFileName, int digitKey)
   {
     LabelProcessor labelProcessor = new LabelProcessor();
-    LabelInformation labelInformation = labelProcessor.readTxtLabelFile(
-            DefaultConfigValues.FILE_PATH_LABEL, labelFileName);
+    LabelInformation labelInformation = labelProcessor.readTxtLabelFile(digitKey);
 
     ImageProcessor imageProcessor = new ImageProcessor();
     BufferedImage edgeImage = imageProcessor.readImage(pathName, edgeFileName);
 
+    if (solutionDataExists)
+    {
+      readSolution(digitKey);
+    }
+    
     List<TissueCore> cores = detectCores(pathName, edgeFileName,
             labelInformation, edgeImage, digitKey);
 
@@ -92,6 +95,7 @@ public class CoreExtractor
     Imgproc.findContours(edgeMat, contours, hierarchy, Imgproc.RETR_EXTERNAL,
             Imgproc.CHAIN_APPROX_SIMPLE);
     List<TissueCore> allCores = new ArrayList<>();
+    int discardedObjectCount = 0;
     for (int i = 0; i < contours.size(); i++)
     {
       Rect boundingBox = Imgproc.boundingRect(contours.get(i));
@@ -101,6 +105,10 @@ public class CoreExtractor
       {
         allCores.add(new TissueCore(boundingBox.x, boundingBox.y,
                 boundingBox.width, boundingBox.height));
+      }
+      else
+      {
+        discardedObjectCount++;
       }
     }
     List<TissueCore> mergedCores = mergeIntersectingRectangles(allCores);
@@ -126,7 +134,8 @@ public class CoreExtractor
       coreMessage = " redundant cores were found.";
     }
 
-    StatisticsWriter.getInstance().addDetectionStats(foundCoreCount);
+    StatisticsWriter.getInstance().addDetectionStats(digitKey, mergedCores, 
+            discardedObjectCount);
     double coreDetectionPercentage
             = Double.valueOf(foundCoreCount)
             / coreCount * 100;
@@ -220,8 +229,6 @@ public class CoreExtractor
   {
     if (solutionDataExists)
     {
-      readSolution(digitKey);
-
       System.out.println("Performance Core Merging:");
       outputMergePerformance(digitKey, labelInformation);
     }
@@ -435,12 +442,6 @@ public class CoreExtractor
           drawBoundingBox(g, core, cellText);
         }
       }
-    }
-
-    if (isGrid)
-    {
-      //FIXME Quickfix to only count data once
-      StatisticsWriter.getInstance().addAssignStats(solutionCoreCount, solutionGapCount);
     }
 
     StatisticsWriter.getInstance().addAssignStats(

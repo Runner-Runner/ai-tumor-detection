@@ -13,7 +13,8 @@ public class ManualSolutionReader
 {
   public AssignmentInformation readSolution(int digitKey)
   {
-    AssignmentInformation assignmentInformation = new AssignmentInformation();
+    AssignmentInformation assignmentInformation = new AssignmentInformation(
+            digitKey);
     
     LabelProcessor labelProcessor = new LabelProcessor();
     LabelInformation labelInformation = labelProcessor.readTxtLabelFile(digitKey);
@@ -24,6 +25,7 @@ public class ManualSolutionReader
               FILE_PATH_LABEL_SOLUTION + digitKey + "-solution.txt"));
       String line = null;
       int rowCount = 0;
+      int gapCount = 0;
       while((line = reader.readLine()) != null)
       {
         String[] splitLine = line.split(",");
@@ -50,7 +52,11 @@ public class ManualSolutionReader
             dummyCore.setIds(coreIds);
             assignmentInformation.addAssignment(rowCount, c, dummyCore, null);
           }
-          else if(!cellValue.contains("g"))
+          else if(cellValue.contains("g"))
+          {
+            gapCount++;
+          }
+          else
           {
             TissueCore dummyCore = new TissueCore(-1, -1, -1, -1);
             dummyCore.setIds(Integer.parseInt(cellValue));
@@ -60,6 +66,7 @@ public class ManualSolutionReader
         
         rowCount++;
       }
+      assignmentInformation.setGapCount(gapCount);
       
       if(rowCount != labelInformation.getRowCount())
       {

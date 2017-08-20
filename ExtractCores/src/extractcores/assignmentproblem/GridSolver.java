@@ -32,7 +32,8 @@ public abstract class GridSolver extends AssignmentSolver
           String edgeFileName)
   {
     super(cores, labelInformation, edgeFileName);
-    assignmentInformation = new AssignmentInformation();
+    assignmentInformation = new AssignmentInformation(labelInformation.
+            getDigitKey());
   }
 
   @Override

@@ -126,7 +126,8 @@ public class GeometricBatchSolver extends AssignmentSolver
     }
     System.out.println("");
 
-    assignmentInformation = new AssignmentInformation();
+    assignmentInformation = new AssignmentInformation(labelInformation.
+            getDigitKey());
     for (int i = 0; i < geometricModels.length; i++)
     {
       GeometricModel model = geometricModels[i];

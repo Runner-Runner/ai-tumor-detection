@@ -8,9 +8,12 @@ import java.util.List;
 public class AssignmentInformation
 {
   private List<Assignment> coreAssignments;
+  private int digitKey;
+  private int gapCount = 0;
 
-  public AssignmentInformation()
+  public AssignmentInformation(int digitKey)
   {
+    this.digitKey = digitKey;
     coreAssignments = new ArrayList<>();
   }
 
@@ -20,6 +23,16 @@ public class AssignmentInformation
     Collections.sort(coreAssignments);
   }
 
+  public void setGapCount(int gapCount)
+  {
+    this.gapCount = gapCount;
+  }
+
+  public int getGapCount()
+  {
+    return gapCount;
+  }
+  
   public List<Assignment> getLowestInRow(int row, int n)
   {
     //list is sorted by distance on default
@@ -50,8 +63,18 @@ public class AssignmentInformation
     return null;
   }
   
+  public Assignment getAssignment(int index)
+  {
+    return coreAssignments.get(index);
+  }
+  
   public int getSize()
   {
     return coreAssignments.size();
+  }
+
+  public int getDigitKey()
+  {
+    return digitKey;
   }
 }
