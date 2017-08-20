@@ -125,7 +125,7 @@ public class CoreExtractor
       missingCoreCount *= -1;
       coreMessage = " redundant cores were found.";
     }
-    
+
     StatisticsWriter.getInstance().addDetectionStats(foundCoreCount);
     double coreDetectionPercentage
             = Double.valueOf(foundCoreCount)
@@ -234,7 +234,7 @@ public class CoreExtractor
     {
       System.out.println("Performance SimpleGridSolver:");
       outputAssignmentPerformance(digitKey, labelInformation,
-              simpleSolver.getAssignmentInformation(), true);
+              simpleSolver.getAssignmentInformation(), edgeFileName, true);
     }
 
     GeometricBatchSolver solver = new GeometricBatchSolver(
@@ -245,8 +245,8 @@ public class CoreExtractor
     if (solutionDataExists)
     {
       System.out.println("Performance GeometricBatchSolver:");
-      outputAssignmentPerformance(digitKey, labelInformation, 
-              assignmentInformation, false);
+      outputAssignmentPerformance(digitKey, labelInformation,
+              assignmentInformation, edgeFileName, false);
     }
 
     List<TissueCore> labeledCores = solver.createLabeledCores();
@@ -308,9 +308,9 @@ public class CoreExtractor
         }
       }
     }
-    
+
     StatisticsWriter.getInstance().addMergeStats(correctMergeCount, solutionMergeCount);
-    
+
     double mergePercent = Double.valueOf(correctMergeCount) / solutionMergeCount * 100;
     System.out.println("Correctly merged: " + correctMergeCount + "/"
             + solutionMergeCount + ", "
@@ -331,8 +331,18 @@ public class CoreExtractor
   }
 
   public void outputAssignmentPerformance(int digitKey, LabelInformation labelInformation,
-          AssignmentInformation assignmentInformation, boolean isGrid)
+          AssignmentInformation assignmentInformation, String edgeFileName, boolean isGrid)
   {
+    //Create assignment performance image
+    ImageProcessor imageProcessor = new ImageProcessor();
+    BufferedImage edgeImage = imageProcessor.readImage(
+            DefaultConfigValues.FILE_PATH_EDGE,
+            edgeFileName);
+    BufferedImage foundObjectsImage = new BufferedImage(edgeImage.getWidth(),
+            edgeImage.getHeight(), edgeImage.getType());
+    Graphics g = foundObjectsImage.getGraphics();
+    g.drawImage(edgeImage, 0, 0, null);
+
     //Assignment results
     int cellCount = labelInformation.getRowCount()
             * labelInformation.getColumnCount();
@@ -344,12 +354,11 @@ public class CoreExtractor
     int correctAssignGapCount = 0;
 
 //    System.out.println("Core assignment results for #" + digitKey + ":");
-
     for (int i = 0; i < labelInformation.getRowCount(); i++)
     {
       for (int j = 0; j < labelInformation.getColumnCount(); j++)
       {
-        System.out.print("Cell (" + (i + 1) + "/" + (j + 1) + "): ");
+//        System.out.print("Cell (" + (i + 1) + "/" + (j + 1) + "): ");
 
         Assignment assignment = assignmentInformation.getAssignment(i, j);
         Assignment solutionAssignment = solutionAssignmentInformation.
@@ -359,7 +368,7 @@ public class CoreExtractor
         {
           correctAssignGapCount++;
           solutionGapCount++;
-          System.out.print("Found correct gap.");
+//          System.out.print("Found correct gap.");
         }
         else if (assignment != null && solutionAssignment != null)
         {
@@ -394,11 +403,13 @@ public class CoreExtractor
 //              System.out.print("Correct assignment: ids = [" + Arrays.toString(ids)
 //                      + "].");
               correctAssignCoreCount++;
+              g.setColor(Color.GREEN);
             }
             else
             {
 //              System.out.print("Wrong ID: assigned [" + ids[0]
 //                      + "], actually [" + solutionIds[0] + "].");
+              g.setColor(Color.RED);
             }
           }
         }
@@ -410,22 +421,31 @@ public class CoreExtractor
         }
         else if (assignment != null && solutionAssignment == null)
         {
+          g.setColor(Color.RED);
           solutionGapCount++;
 //          System.out.print("Assigned core into gap: ID = " + Arrays.toString(
 //                  assignment.getCore().getIds()) + ".");
         }
 //        System.out.println("");
+
+        if (assignment != null)
+        {
+          TissueCore core = assignment.getCore();
+          String cellText = core.getId() + "\n(" + (i + 1) + "/" + (j + 1) + ")";
+          drawBoundingBox(g, core, cellText);
+        }
       }
     }
 
-    if(isGrid)
+    if (isGrid)
     {
+      //FIXME Quickfix to only count data once
       StatisticsWriter.getInstance().addAssignStats(solutionCoreCount, solutionGapCount);
     }
-    
+
     StatisticsWriter.getInstance().addAssignStats(
             correctAssignCoreCount, correctAssignGapCount, isGrid);
-    
+
     double correctCorePercent = Double.valueOf(correctAssignCoreCount) / solutionCoreCount * 100;
     double correctGapPercent = Double.valueOf(correctAssignGapCount) / solutionGapCount * 100;
     double totalPercent = Double.valueOf(
@@ -439,6 +459,12 @@ public class CoreExtractor
             + solutionGapCount + ", "
             + String.format("%.2f", correctGapPercent) + "%.");
     System.out.println("Overall performance: " + String.format("%.2f", totalPercent) + "%.");
+
+    g.dispose();
+    String postfix = isGrid ? "grid" : "curve";
+    imageProcessor.writeImage(foundObjectsImage,
+            DefaultConfigValues.FILE_PATH_INFORMATIVE,
+            ImageProcessor.appendFilename(edgeFileName, "performance-" + postfix, "png"));
   }
 
   private List<TissueCore> mergeBrokenCores(List<TissueCore> cores)
@@ -548,7 +574,7 @@ public class CoreExtractor
     g.setColor(Color.green);
     for (int i = 0; i < mergedCores.size(); i++)
     {
-      drawBoundingBox(g, mergedCores.get(i), i);
+      drawBoundingBox(g, mergedCores.get(i), String.valueOf(i));
     }
 
     g.dispose();
@@ -558,20 +584,19 @@ public class CoreExtractor
             ImageProcessor.appendFilename(edgeFileName, "info", "png"));
   }
 
-  private void drawBoundingBox(Graphics g, TissueCore core, Integer index)
+  private void drawBoundingBox(Graphics g, TissueCore core, String text)
   {
     Rectangle boundingBox = core.getBoundingBox();
     g.drawRect(boundingBox.x, boundingBox.y,
             boundingBox.width, boundingBox.height);
 
-    if (index != null)
+    if (text != null)
     {
-      String indexString = String.valueOf(index);
       int x = boundingBox.x + boundingBox.width - 20;
       int y = boundingBox.y + boundingBox.height - 20;
 
       FontMetrics fm = g.getFontMetrics();
-      Rectangle2D rect = fm.getStringBounds(indexString, g);
+      Rectangle2D rect = fm.getStringBounds(text, g);
 
       g.setColor(Color.DARK_GRAY);
       g.fillRect(x,
@@ -579,7 +604,7 @@ public class CoreExtractor
               (int) rect.getWidth(),
               (int) rect.getHeight());
       g.setColor(Color.GREEN);
-      g.drawString(indexString, x, y);
+      g.drawString(text, x, y);
     }
   }
 

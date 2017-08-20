@@ -11,8 +11,8 @@ public class Main
 {
   public static void main(String[] args) throws IOException
   {
-    processImages();
-//    processImage(5512, false);
+//    processImages();
+    processImage(5512, true);
   }
 
   public static void processImages()

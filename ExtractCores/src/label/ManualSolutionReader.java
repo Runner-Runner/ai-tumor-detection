@@ -29,10 +29,10 @@ public class ManualSolutionReader
         String[] splitLine = line.split(",");
         if(splitLine.length != labelInformation.getColumnCount())
         {
-          System.out.println("Column count in row #" + (rowCount+1) + 
+          System.err.println("Column count in row #" + (rowCount+1) + 
                   " doesn't match label file! Label file: " 
                 + labelInformation.getColumnCount() + " columns. Solution file: " 
-                + splitLine.length + " rows.");
+                + splitLine.length + " columns.");
         }
         
         for(int c=0; c<splitLine.length; c++)
@@ -63,7 +63,7 @@ public class ManualSolutionReader
       
       if(rowCount != labelInformation.getRowCount())
       {
-        System.out.println("Row count doesn't match label file! Label file: " 
+        System.err.println("Row count doesn't match label file! Label file: " 
                 + labelInformation.getRowCount() + " rows. Solution file: " 
                 + rowCount + " rows.");
       }

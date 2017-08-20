@@ -45,13 +45,13 @@ public class TissueCore
 
   public int getId()
   {
-    if(ids == null)
+    if (ids == null)
     {
       return -1;
     }
     return ids[0];
   }
-  
+
   public int[] getIds()
   {
     return ids;
@@ -61,7 +61,7 @@ public class TissueCore
   {
     this.ids = ids;
   }
-  
+
   @Override
   public String toString()
   {
@@ -134,6 +134,6 @@ public class TissueCore
   {
     int xDiff = Math.abs(centerX - otherCore.getCenterX());
     int yDiff = Math.abs(centerY - otherCore.getCenterY());
-    return (int)Math.sqrt(xDiff * xDiff + yDiff * yDiff);
+    return (int) Math.sqrt(xDiff * xDiff + yDiff * yDiff);
   }
 }
