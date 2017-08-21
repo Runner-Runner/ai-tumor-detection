@@ -75,7 +75,7 @@ public class CoreExtractor
     {
       readSolution(digitKey);
     }
-    
+
     List<TissueCore> cores = detectCores(pathName, edgeFileName,
             labelInformation, edgeImage, digitKey);
 
@@ -134,7 +134,7 @@ public class CoreExtractor
       coreMessage = " redundant cores were found.";
     }
 
-    StatisticsWriter.getInstance().addDetectionStats(digitKey, mergedCores, 
+    StatisticsWriter.getInstance().addDetectionStats(digitKey, mergedCores,
             discardedObjectCount);
     double coreDetectionPercentage
             = Double.valueOf(foundCoreCount)
@@ -263,78 +263,55 @@ public class CoreExtractor
   public void outputMergePerformance(int digitKey, LabelInformation labelInformation)
   {
     //Merge results
-    int solutionMergeCount = 0;
-    int correctMergeCount = 0;
-    List<int[]> unusedMergedIds = new ArrayList<>();
-    unusedMergedIds.addAll(mergedIds);
+    List<int[]> wrongMergedIds = new ArrayList<>();
+    List<int[]> missedMergedIds = new ArrayList<>();
+    List<int[]> correctMergedIds = new ArrayList<>();
 
-    for (int i = 0; i < labelInformation.getRowCount(); i++)
+    for (int[] solutionIds : solutionAssignmentInformation.getMergedCoreIds())
     {
-      for (int j = 0; j < labelInformation.getColumnCount(); j++)
+      boolean foundByAlgorithm = false;
+      for (int[] ids : mergedIds)
       {
-        Assignment assignment = solutionAssignmentInformation.getAssignment(i, j);
-        if (assignment != null)
+        //Check if both ID lists contain the exact same IDs
+        if (ids.length == solutionIds.length)
         {
-          int[] solutionIds = assignment.getCore().getIds();
-          if (solutionIds.length > 1)
+          boolean identical = true;
+          for (int k = 0; k < ids.length; k++)
           {
-            solutionMergeCount++;
-            int[] toBeRemoved = null;
-            for (int[] ids : unusedMergedIds)
+            boolean found = false;
+            for (int m = 0; m < solutionIds.length; m++)
             {
-              //Check if both ID lists contain the exact same IDs
-              if (ids.length == solutionIds.length)
+              if (ids[k] == solutionIds[m])
               {
-                boolean identical = true;
-                for (int k = 0; k < ids.length; k++)
-                {
-                  boolean found = false;
-                  for (int m = 0; m < solutionIds.length; m++)
-                  {
-                    if (ids[k] == solutionIds[m])
-                    {
-                      found = true;
-                      break;
-                    }
-                  }
-                  if (!found)
-                  {
-                    identical = false;
-                    break;
-                  }
-                }
-                if (identical)
-                {
-                  correctMergeCount++;
-                  toBeRemoved = ids;
-                }
+                found = true;
+                break;
               }
             }
-            unusedMergedIds.remove(toBeRemoved);
+            if (!found)
+            {
+              identical = false;
+              break;
+            }
+          }
+          if (identical)
+          {
+            correctMergedIds.add(ids);
+            mergedIds.remove(ids);
+            foundByAlgorithm = true;
+            break;
           }
         }
       }
-    }
-
-    StatisticsWriter.getInstance().addMergeStats(correctMergeCount, solutionMergeCount);
-
-    double mergePercent = Double.valueOf(correctMergeCount) / solutionMergeCount * 100;
-    System.out.println("Correctly merged: " + correctMergeCount + "/"
-            + solutionMergeCount + ", "
-            + String.format("%.2f", mergePercent) + "%.");
-    if (unusedMergedIds.isEmpty())
-    {
-      System.out.println("No additional wrong merges.");
-    }
-    else
-    {
-      System.out.print("Additional wrong merges: ");
-      for (int[] unusedId : unusedMergedIds)
+      if(!foundByAlgorithm)
       {
-        System.out.print(Arrays.toString(unusedId) + " ; ");
+        missedMergedIds.add(solutionIds);
       }
-      System.out.println("");
     }
+
+    wrongMergedIds.addAll(mergedIds);
+    
+    StatisticsWriter.getInstance().addMergeStats(digitKey, 
+            correctMergedIds, missedMergedIds, wrongMergedIds);
   }
 
   public void outputAssignmentPerformance(int digitKey, LabelInformation labelInformation,
@@ -573,9 +550,9 @@ public class CoreExtractor
       }
     }
     g.setColor(Color.green);
-    for (int i = 0; i < mergedCores.size(); i++)
+    for (TissueCore core : allCores)
     {
-      drawBoundingBox(g, mergedCores.get(i), String.valueOf(i));
+      drawBoundingBox(g, core, String.valueOf(core.getId()));
     }
 
     g.dispose();
@@ -606,6 +583,7 @@ public class CoreExtractor
               (int) rect.getHeight());
       g.setColor(Color.GREEN);
       g.drawString(text, x, y);
+
     }
   }
 

@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +23,8 @@ public class StatisticsWriter
   private List<Statistic> statistics;
 
   private Map<Integer, AssignmentInformation> solutionAssignmentList;
+
+  private Map<Integer, List<List<int[]>>> mergeStatMap;
 
   private int rows;
   private int columns;
@@ -38,13 +41,14 @@ public class StatisticsWriter
 
   private int foundRelevantCount = 0;
   private int foundIrrelevantCount = 0;
-  private int notFoundRelevantCount = 0;
-  private int notFoundIrrelevantCount = 0;
+  private int missedRelevantCount = 0;
+  private int missedIrrelevantCount = 0;
   private int solutionCoreCount = 0;
   private int solutionGapCount = 0;
 
-  private int solutionMergeCount = 0;
-  private int correctMergeCount = 0;
+  private int foundRelevantMerge = 0;
+  private int foundWrongMerge = 0;
+  private int missedRelevantMerge = 0;
 
   private int correctAssignCoreCountGrid = 0;
   private int correctAssignCoreCountCurve = 0;
@@ -55,6 +59,7 @@ public class StatisticsWriter
   {
     statistics = new ArrayList<>();
     solutionAssignmentList = new HashMap<>();
+    mergeStatMap = new HashMap<>();
   }
 
   public static StatisticsWriter getInstance()
@@ -73,49 +78,57 @@ public class StatisticsWriter
 
   public void addSolution(AssignmentInformation assignmentInformation)
   {
-    solutionAssignmentList.put(assignmentInformation.getDigitKey(), 
+    solutionAssignmentList.put(assignmentInformation.getDigitKey(),
             assignmentInformation);
   }
 
-  public void addDetectionStats(int digitKey, List<TissueCore> detectedCores, 
+  public void addDetectionStats(int digitKey, List<TissueCore> detectedCores,
           int discardedObjectCount)
   {
     AssignmentInformation solution = solutionAssignmentList.get(digitKey);
-    if(solution == null)
+    if (solution == null)
     {
       return;
     }
     List<Integer> solutionCoreIds = new ArrayList<>();
-    for(int i=0; i<solution.getSize(); i++)
+    for (int i = 0; i < solution.getSize(); i++)
     {
       TissueCore core = solution.getAssignment(i).getCore();
-      if(core != null)
+      if (core != null)
       {
         solutionCoreIds.add(core.getId());
       }
     }
-            
-    for(TissueCore core : detectedCores)
+
+    for (TissueCore core : detectedCores)
     {
       int id = core.getId();
-      if(solutionCoreIds.contains(id))
+      if (solutionCoreIds.contains(id))
       {
         foundRelevantCount++;
-        solutionCoreIds.remove((Integer)id);
+        solutionCoreIds.remove((Integer) id);
       }
       else
       {
         foundIrrelevantCount++;
       }
     }
-    notFoundRelevantCount += solutionCoreIds.size();
-    notFoundIrrelevantCount += discardedObjectCount;
+    missedRelevantCount += solutionCoreIds.size();
+    missedIrrelevantCount += discardedObjectCount;
   }
-  
-  public void addMergeStats(int correctMergeCount, int solutionMergeCount)
+
+  public void addMergeStats(int digitKey, List<int[]> correctMergeIds,
+          List<int[]> missedMergeIds, List<int[]> wrongMergeIds)
   {
-    this.correctMergeCount += correctMergeCount;
-    this.solutionMergeCount += solutionMergeCount;
+    //TODO Looks like good design ...
+    List<List<int[]>> mergeStats = new ArrayList<>();
+    mergeStats.add(correctMergeIds);
+    mergeStats.add(missedMergeIds);
+    mergeStats.add(wrongMergeIds);
+    mergeStatMap.put(digitKey, mergeStats);
+    foundRelevantMerge += correctMergeIds.size();
+    missedRelevantMerge += missedMergeIds.size();
+    foundWrongMerge += wrongMergeIds.size();
   }
 
   public void addAssignStats(int correctAssignCoreCount,
@@ -165,16 +178,16 @@ public class StatisticsWriter
     avgCoreWidth /= caseCount;
     avgCoreHeight /= caseCount;
   }
-  
+
   private void calcSolutions()
   {
-    solutionCoreCount += foundRelevantCount + notFoundRelevantCount;
-    for(AssignmentInformation assignmentInformation : solutionAssignmentList.values())
+    solutionCoreCount += foundRelevantCount + missedRelevantCount;
+    for (AssignmentInformation assignmentInformation : solutionAssignmentList.values())
     {
       solutionGapCount += assignmentInformation.getGapCount();
     }
   }
-  
+
   public void write()
   {
     if (statistics.isEmpty())
@@ -184,7 +197,7 @@ public class StatisticsWriter
 
     calculateAvg();
     calcSolutions();
-    
+
     File outputFile = new File(
             FILE_PATH_INFORMATIVE + STATISTICS_FILE_NAME + ".txt");
     try
@@ -206,7 +219,7 @@ public class StatisticsWriter
       writer.write("Avg. image height: " + imageHeight + "\n");
       writer.write("Avg. core width: " + avgCoreWidth + "\n");
       writer.write("Avg. core height: " + avgCoreHeight + "\n\n");
-      
+
       writer.write("Based on label file data:\n");
       writer.write("Total nr. of cores: " + labelTotalCores + "\n");
       writer.write("Avg. nr. of cores: " + labelAvgCores + "\n");
@@ -214,35 +227,41 @@ public class StatisticsWriter
       writer.write("Avg. nr. of gaps: " + labelAvgGaps + "\n");
       writer.write("Total nr. of tumor cores: " + labelTotalTumorCores + "\n");
       writer.write("Total nr. of normal cores: " + labelTotalNormalCores + "\n\n");
-      
+
       writer.write("Based on solution file data:\n");
       writer.write("Total nr. of cores: " + solutionCoreCount + "\n");
       writer.write("Total nr. of gaps: " + solutionGapCount + "\n");
-      
+
       writer.write("Detected cores (by ground truth): \n");
       writer.write("Detected relevant objects: " + foundRelevantCount + "\n");
       writer.write("Detected irrelevant objects: " + foundIrrelevantCount + "\n");
-      writer.write("Not detected relevant objects: " + notFoundRelevantCount + "\n");
-      writer.write("Not detected irrelevant objects: " + notFoundIrrelevantCount + "\n");
+      writer.write("Not detected relevant objects: " + missedRelevantCount + "\n");
+      writer.write("Not detected irrelevant objects: " + missedIrrelevantCount + "\n");
       double corePrecision
               = Double.valueOf(foundRelevantCount) / (foundRelevantCount + foundIrrelevantCount) * 100;
       writer.write("Precision: " + String.format("%.2f", corePrecision) + "%.\n");
       double coreRecall
               = Double.valueOf(foundRelevantCount) / (solutionCoreCount) * 100;
       writer.write("Recall: " + String.format("%.2f", coreRecall) + "%.\n\n");
-      
+
       int missingCores = labelTotalCores - solutionCoreCount;
       double missingPercent = Double.valueOf(missingCores) / labelTotalCores * 100;
-      writer.write("Nr. of cores worn out (cf. label <-> solution): " + 
-              missingCores + ". " + String.format("%.2f", missingPercent) + 
-              "% of cores from label file are missing.\n\n");
+      writer.write("Nr. of cores worn out (cf. label <-> solution): "
+              + missingCores + ". " + String.format("%.2f", missingPercent)
+              + "% of cores from label file are missing.\n\n");
 
-      double mergePercentage
-              = Double.valueOf(correctMergeCount) / solutionMergeCount * 100;
-      writer.write("Correctly merged cores: " + correctMergeCount
-              + "/" + solutionMergeCount
-              + ", " + String.format("%.2f", mergePercentage) + "%.\n");
+      writer.write("Merge performance:\n");
+      writer.write("Correct merges: " + foundRelevantMerge + "\n");
+      writer.write("Incorrect merges: " + foundWrongMerge + "\n");
+      writer.write("Missed merges: " + missedRelevantMerge + "\n");
+      double mergePrecision
+              = Double.valueOf(foundRelevantMerge) / (foundRelevantMerge + foundWrongMerge) * 100;
+      writer.write("Precision: " + String.format("%.2f", mergePrecision) + "%.\n");
+      double mergeRecall
+              = Double.valueOf(foundRelevantMerge) / (foundRelevantMerge + missedRelevantMerge) * 100;
+      writer.write("Recall: " + String.format("%.2f", mergeRecall) + "%.\n\n");
 
+      writer.write("Assignment performance:\n");
       double assignCorePercentageGrid
               = Double.valueOf(correctAssignCoreCountGrid) / solutionCoreCount * 100;
       writer.write("Grid: Correctly assigned cores (ID-checked): " + correctAssignCoreCountGrid
@@ -265,7 +284,7 @@ public class StatisticsWriter
               + "/" + solutionGapCount
               + ", " + String.format("%.2f", assignGapPercentageCurve) + "%.\n");
 
-      writer.write("Statistics per image file:\n");
+      writer.write("Statistics per TMA image file:\n");
       for (Statistic statistic : statistics)
       {
         writer.write("Digit Key: " + statistic.getDigitKey() + "\n");
@@ -273,9 +292,29 @@ public class StatisticsWriter
                 + statistic.getImageHeight() + "\n");
         writer.write("Cores: avg dim=" + statistic.getAvgCoreWidth()
                 + "*" + statistic.getAvgCoreHeight() + "\n");
+        List<List<int[]>> mergeStat = mergeStatMap.get(statistic.getDigitKey());
+        List<int[]> correctMergeIds = mergeStat.get(0);
+        List<int[]> missedMergeIds = mergeStat.get(1);
+        List<int[]> wrongMergeIds = mergeStat.get(2);
+        writer.write("Correct merge IDs: ");
+        for (int[] mergeId : correctMergeIds)
+        {
+          writer.write(Arrays.toString(mergeId) + " ");
+        }
+        writer.write("\n");
+        writer.write("Wrong merge IDs: ");
+        for (int[] mergeId : wrongMergeIds)
+        {
+          writer.write(Arrays.toString(mergeId) + " ");
+        }
+        writer.write("\n");
+        writer.write("Missed merge IDs: ");
+        for (int[] mergeId : missedMergeIds)
+        {
+          writer.write(Arrays.toString(mergeId) + " ");
+        }
+        writer.write("\n");
       }
-
-      writer.write("");
 
       writer.close();
     }

@@ -12,7 +12,7 @@ public class Main
   public static void main(String[] args) throws IOException
   {
     processImages();
-//    processImage(5512, true);
+//    processImage(5707, true);
 //    StatisticsWriter.getInstance().write();
   }
 

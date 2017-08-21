@@ -8,6 +8,7 @@ import java.util.List;
 public class AssignmentInformation
 {
   private List<Assignment> coreAssignments;
+  private List<int[]> mergedCoreIds;
   private int digitKey;
   private int gapCount = 0;
 
@@ -15,12 +16,19 @@ public class AssignmentInformation
   {
     this.digitKey = digitKey;
     coreAssignments = new ArrayList<>();
+    mergedCoreIds = new ArrayList<>();
   }
 
   public void addAssignment(int row, int column, TissueCore core, Integer distance)
   {
     coreAssignments.add(new Assignment(row, column, core, distance));
     Collections.sort(coreAssignments);
+    
+    int[] ids = core.getIds();
+    if(ids.length > 1)
+    {
+      mergedCoreIds.add(ids);
+    }
   }
 
   public void setGapCount(int gapCount)
@@ -76,5 +84,10 @@ public class AssignmentInformation
   public int getDigitKey()
   {
     return digitKey;
+  }
+
+  public List<int[]> getMergedCoreIds()
+  {
+    return mergedCoreIds;
   }
 }
